@@ -4,7 +4,7 @@
     program = "${pkgs.cargo}/bin/cargo";
   };
 
-  buildRustPackage = pkgs: {src, rust ? null, name ? null}:
+  mkRustBinary = pkgs: {src, rust ? null, name ? null}:
     let
       cargoToml = builtins.fromTOML (builtins.readFile (src + "/Cargo.toml"));
       nameAttrs =
@@ -14,8 +14,8 @@
         }
         else {inherit name;}
       ;
-    in
-      pkgs.rustPlatform.buildRustPackage (nameAttrs // {
+
+      package = pkgs.rustPlatform.buildRustPackage (nameAttrs // {
         inherit src;
 
         nativeBuildInputs = with builtins; pkgs.lib.optional (! isNull rust) rust;
@@ -24,5 +24,14 @@
           lockFile = src + "/Cargo.lock";
         };
       });
+
+    in {
+      app = {
+        type = "app";
+        program = "${package}/bin/${cargoToml.package.name}";
+      };
+
+      inherit package;
+    };
 
 }

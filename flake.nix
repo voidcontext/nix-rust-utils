@@ -14,11 +14,12 @@
         pkgs = import inputs.nixpkgs { inherit system overlays; };
 
         rust = import ./rust;
+
       in {
         inherit rust;
 
-        checks."rust.buildRustPackage" =
-          rust.buildRustPackage pkgs { src = ./checks/rust/package; };
+        checks = import ./checks pkgs rust;
+
       }
     );
 }
