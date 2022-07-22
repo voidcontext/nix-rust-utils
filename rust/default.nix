@@ -1,6 +1,6 @@
 {
-  apps.cargo = { pkgs, buildInputs ? [ ] }:
-    let cargo = pkgs.cargo.overrideAttrs (oldAttrs: {
+  apps.cargo = { pkgs, buildInputs ? [ ], cargo ? pkgs.cargo }:
+    let cargoPackage = cargo.overrideAttrs (oldAttrs: {
       buildInputs =
         (pkgs.lib.lists.optionals (builtins.hasAttr "buildInputs" oldAttrs) oldAttrs.buildInputs)
         ++ buildInputs;
@@ -8,7 +8,7 @@
     in
     {
       type = "app";
-      program = "${cargo}/bin/cargo";
+      program = "${cargoPackage}/bin/cargo";
     };
 
   mkRustBinary = pkgs:
