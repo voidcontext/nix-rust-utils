@@ -1,15 +1,24 @@
 {
-  apps.cargo = pkgs: {
-    type = "app";
-    program = "${pkgs.cargo}/bin/cargo";
-  };
+  apps.cargo  = {pkgs, buildInputs ? []}:
+    with builtins;
+    let cargo = pkgs.cargo.overrideAttrs(oldAttrs: {
+          buildInputs = (optionals (hasAttr "buildInputs" oldAttrs) oldAttrs.buildInputs) ++ buildInputs;
+        });
+    in {
+      type = "app";
+      program = "${cargo}/bin/cargo";
+    };
 
   mkRustBinary = pkgs:
+    with builtins;
     { src
     , checkFmt ? true
     , rust ? null
     , name ? null
-    }:
+    , nativeBuildInputs ? []
+    , preCheck ? ""
+    , ...
+    }@args:
     let
       cargoToml = builtins.fromTOML (builtins.readFile (src + "/Cargo.toml"));
       nameAttrs =
@@ -20,17 +29,19 @@
         else { inherit name; }
       ;
     in
-      pkgs.rustPlatform.buildRustPackage (nameAttrs // {
-        inherit src;
-
-        nativeBuildInputs = with builtins;
+      pkgs.rustPlatform.buildRustPackage (nameAttrs // args // {
+        nativeBuildInputs =
+          nativeBuildInputs ++
           (pkgs.lib.optional (! isNull rust) rust) ++
             (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
 
         preCheck =
           if checkFmt
-          then "cargo fmt --check"
-          else "";
+          then ''
+          cargo fmt --check
+          ${preCheck}
+          ''
+          else preCheck;
 
         cargoLock = {
           lockFile = src + "/Cargo.lock";
