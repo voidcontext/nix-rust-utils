@@ -4,7 +4,12 @@
     program = "${pkgs.cargo}/bin/cargo";
   };
 
-  mkRustBinary = pkgs: {src, rust ? null, name ? null}:
+  mkRustBinary = pkgs:
+    { src
+    , checkFmt ? true
+    , rust ? null
+    , name ? null
+    }:
     let
       cargoToml = builtins.fromTOML (builtins.readFile (src + "/Cargo.toml"));
       nameAttrs =
@@ -18,11 +23,19 @@
       package = pkgs.rustPlatform.buildRustPackage (nameAttrs // {
         inherit src;
 
-        nativeBuildInputs = with builtins; pkgs.lib.optional (! isNull rust) rust;
+        nativeBuildInputs = with builtins;
+          (pkgs.lib.optional (! isNull rust) rust) ++
+          (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
+
+        preCheck =
+          if checkFmt
+          then "cargo fmt --check"
+          else "";
 
         cargoLock = {
           lockFile = src + "/Cargo.lock";
         };
+
       });
 
     in {

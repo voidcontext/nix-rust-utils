@@ -15,11 +15,17 @@
 
         rust = import ./rust;
 
+        checks = import ./checks pkgs system rust;
       in {
         inherit rust;
+        inherit (checks) checks;
 
-        checks = import ./checks pkgs rust;
+        apps.check-scripts = {
+          "type" = "app";
+          "program" = "${checks.scripts.check-builds-failing}/bin/check-builds-failing";
+        };
 
+        testPackages = checks.testPackages;
       }
     );
 }

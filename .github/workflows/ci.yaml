@@ -18,3 +18,5 @@ jobs:
       uses: cachix/install-nix-action@v17
     - name: Flake Check
       run: nix flake check
+    - name: Run additional checks
+      run: nix run .#check-scripts
