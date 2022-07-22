@@ -1,10 +1,12 @@
 {
-  apps.cargo  = {pkgs, buildInputs ? []}:
-    with builtins;
-    let cargo = pkgs.cargo.overrideAttrs(oldAttrs: {
-          buildInputs = (optionals (hasAttr "buildInputs" oldAttrs) oldAttrs.buildInputs) ++ buildInputs;
-        });
-    in {
+  apps.cargo = { pkgs, buildInputs ? [ ] }:
+    let cargo = pkgs.cargo.overrideAttrs (oldAttrs: {
+      buildInputs =
+        (pkgs.lib.lists.optionals (builtins.hasAttr "buildInputs" oldAttrs) oldAttrs.buildInputs)
+        ++ buildInputs;
+    });
+    in
+    {
       type = "app";
       program = "${cargo}/bin/cargo";
     };
@@ -15,7 +17,7 @@
     , checkFmt ? true
     , rust ? null
     , name ? null
-    , nativeBuildInputs ? []
+    , nativeBuildInputs ? [ ]
     , preCheck ? ""
     , ...
     }@args:
@@ -29,24 +31,24 @@
         else { inherit name; }
       ;
     in
-      pkgs.rustPlatform.buildRustPackage (nameAttrs // args // {
-        nativeBuildInputs =
-          nativeBuildInputs ++
+    pkgs.rustPlatform.buildRustPackage (nameAttrs // args // {
+      nativeBuildInputs =
+        nativeBuildInputs ++
           (pkgs.lib.optional (! isNull rust) rust) ++
-            (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
+          (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
 
-        preCheck =
-          if checkFmt
-          then ''
+      preCheck =
+        if checkFmt
+        then ''
           cargo fmt --check
           ${preCheck}
-          ''
-          else preCheck;
+        ''
+        else preCheck;
 
-        cargoLock = {
-          lockFile = src + "/Cargo.lock";
-        };
+      cargoLock = {
+        lockFile = src + "/Cargo.lock";
+      };
 
-      });
+    });
 
 }

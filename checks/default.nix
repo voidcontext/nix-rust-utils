@@ -7,7 +7,7 @@ let
 
   # Should fail
   rust-binary-test-fmt-error = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; });
-  rust-binary-test-custom-attrs = (rust.mkRustBinary pkgs { src = ./rust/package; buildPhase = "exit 1";});
+  rust-binary-test-custom-attrs = (rust.mkRustBinary pkgs { src = ./rust/package; buildPhase = "exit 1"; });
   rust-binary-test-rust-can-be-overridden = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; rust = pkgs.rust-bin.stable."1.50.0".minimal; });
 
   assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
@@ -35,6 +35,11 @@ in
 
   checks."rust.mkRustBinary.package.disable-fmt-check" =
     rust-binary-test-disable-fmt-check;
+
+  checks."rust.apps.cargo" =
+    pkgs.writeScriptBin "cargo-check" ''
+      ${(rust.apps.cargo {inherit pkgs;}).program}
+    '';
 
   scripts = {
     inherit check-builds-failing;

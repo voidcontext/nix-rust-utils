@@ -27,6 +27,10 @@
         };
 
         testPackages = checks.testPackages;
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = [ pkgs.nixpkgs-fmt ];
+        };
       }
     );
 }
