@@ -1,8 +1,13 @@
 pkgs: system: rust:
 
 let
+  # Should build
   rust-binary-test = (rust.mkRustBinary pkgs { src = ./rust/package; });
+  rust-binary-test-disable-fmt-check = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; checkFmt = false; });
+
+  # Should fail
   rust-binary-test-fmt-error = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; });
+  rust-binary-test-rust-can-be-overridden = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; rust = pkgs.rust-bin.stable."1.50.0".minimal;});
 
   assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
   test_package=$1
@@ -17,11 +22,15 @@ let
 
   check-builds-failing = pkgs.writeScriptBin "check-builds-failing" ''
   ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-fmt-error"
+  ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-rust-can-be-overridden"
   '';
 in {
 
   checks."rust.mkRustBinary.package" =
     rust-binary-test.package;
+
+  checks."rust.mkRustBinary.package.disable-fmt-check" =
+    rust-binary-test-disable-fmt-check.package;
 
   checks."rust.mkRustBinary.app" = pkgs.stdenv.mkDerivation {
     name = "rust-mk-binary-app-test";
@@ -48,6 +57,8 @@ in {
   };
 
   testPackages = {
-    inherit rust-binary-test-fmt-error;
+    inherit 
+      rust-binary-test-fmt-error
+      rust-binary-test-rust-can-be-overridden;
   };
 }
