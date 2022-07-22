@@ -25,8 +25,7 @@
 
         nativeBuildInputs = with builtins;
           (pkgs.lib.optional (! isNull rust) rust) ++
-            (pkgs.lib.optionals checkFmt [ pkgs.rustfmt ]) ++
-            (pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.pkgconfig pkgs.openssl ]);
+            (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
 
         preCheck =
           if checkFmt
