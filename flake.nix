@@ -16,7 +16,8 @@
         rust = import ./rust;
 
         checks = import ./checks pkgs system rust;
-      in {
+      in
+      {
         inherit rust;
         inherit (checks) checks;
 

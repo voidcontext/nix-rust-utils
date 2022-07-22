@@ -7,24 +7,25 @@ let
 
   # Should fail
   rust-binary-test-fmt-error = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; });
-  rust-binary-test-rust-can-be-overridden = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; rust = pkgs.rust-bin.stable."1.50.0".minimal;});
+  rust-binary-test-rust-can-be-overridden = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; rust = pkgs.rust-bin.stable."1.50.0".minimal; });
 
   assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
-  test_package=$1
+    test_package=$1
 
-  result=$(${pkgs.nix}/bin/nix build .#testPackages.${system}.$test_package.package || echo "failed")
+    result=$(${pkgs.nix}/bin/nix build .#testPackages.${system}.$test_package.package || echo "failed")
 
-  if [ "$result" != "failed" ]; then
-    echo "Build of $test_package didn't fail."
-    exit 1
-  fi
+    if [ "$result" != "failed" ]; then
+      echo "Build of $test_package didn't fail."
+      exit 1
+    fi
   '';
 
   check-builds-failing = pkgs.writeScriptBin "check-builds-failing" ''
-  ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-fmt-error"
-  ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-rust-can-be-overridden"
+    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-fmt-error"
+    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-rust-can-be-overridden"
   '';
-in {
+in
+{
 
   checks."rust.mkRustBinary.package" =
     rust-binary-test.package;
@@ -38,15 +39,15 @@ in {
     src = ./.;
 
     buildPhase = ''
-    mkdir -p $out
-    output="$(${rust-binary-test.app.program})"
-    expected="Hello, world!"
+      mkdir -p $out
+      output="$(${rust-binary-test.app.program})"
+      expected="Hello, world!"
 
-    echo "Checking if $output == $expected"
+      echo "Checking if $output == $expected"
 
-    if [ "$output" != "$expected" ]; then
-      exit 1
-    fi
+      if [ "$output" != "$expected" ]; then
+        exit 1
+      fi
     '';
 
     installPhase = ''echo "Skipping installPhase..."'';
@@ -57,7 +58,7 @@ in {
   };
 
   testPackages = {
-    inherit 
+    inherit
       rust-binary-test-fmt-error
       rust-binary-test-rust-can-be-overridden;
   };

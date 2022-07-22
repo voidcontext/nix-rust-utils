@@ -17,7 +17,7 @@
           pname = cargoToml.package.name;
           version = cargoToml.package.version;
         }
-        else {inherit name;}
+        else { inherit name; }
       ;
 
       package = pkgs.rustPlatform.buildRustPackage (nameAttrs // {
@@ -25,7 +25,7 @@
 
         nativeBuildInputs = with builtins;
           (pkgs.lib.optional (! isNull rust) rust) ++
-          (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
+            (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
 
         preCheck =
           if checkFmt
@@ -38,7 +38,8 @@
 
       });
 
-    in {
+    in
+    {
       app = {
         type = "app";
         program = "${package}/bin/${cargoToml.package.name}";
