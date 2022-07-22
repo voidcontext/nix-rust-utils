@@ -19,8 +19,8 @@
         }
         else { inherit name; }
       ;
-
-      package = pkgs.rustPlatform.buildRustPackage (nameAttrs // {
+    in
+      pkgs.rustPlatform.buildRustPackage (nameAttrs // {
         inherit src;
 
         nativeBuildInputs = with builtins;
@@ -37,15 +37,5 @@
         };
 
       });
-
-    in
-    {
-      app = {
-        type = "app";
-        program = "${package}/bin/${cargoToml.package.name}";
-      };
-
-      inherit package;
-    };
 
 }

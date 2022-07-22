@@ -28,30 +28,10 @@ in
 {
 
   checks."rust.mkRustBinary.package" =
-    rust-binary-test.package;
+    rust-binary-test;
 
   checks."rust.mkRustBinary.package.disable-fmt-check" =
-    rust-binary-test-disable-fmt-check.package;
-
-  checks."rust.mkRustBinary.app" = pkgs.stdenv.mkDerivation {
-    name = "rust-mk-binary-app-test";
-
-    src = ./.;
-
-    buildPhase = ''
-      mkdir -p $out
-      output="$(${rust-binary-test.app.program})"
-      expected="Hello, world!"
-
-      echo "Checking if $output == $expected"
-
-      if [ "$output" != "$expected" ]; then
-        exit 1
-      fi
-    '';
-
-    installPhase = ''echo "Skipping installPhase..."'';
-  };
+    rust-binary-test-disable-fmt-check;
 
   scripts = {
     inherit check-builds-failing;
