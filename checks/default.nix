@@ -3,6 +3,10 @@ pkgs: system: rust:
 let
   # Should build
   rust-binary-test = (rust.mkRustBinary pkgs { src = ./rust/package; });
+  rust-binary-test-source-root = (rust.mkRustBinary pkgs { src = ./rust/non-root-package; sourceRoot = "non-root-package/package"; cargoDir = ./rust/non-root-package/package; preUnpack = ''
+    set -x
+    pwd
+  '';});
   rust-binary-test-disable-fmt-check = (rust.mkRustBinary pkgs { src = ./rust/package-with-fmt-error; checkFmt = false; });
 
   # Should fail
@@ -32,6 +36,9 @@ in
 
   checks."rust.mkRustBinary.package" =
     rust-binary-test;
+
+  checks."rust.mkRustBinary.package-source-root" =
+    rust-binary-test-source-root;
 
   checks."rust.mkRustBinary.package.disable-fmt-check" =
     rust-binary-test-disable-fmt-check;

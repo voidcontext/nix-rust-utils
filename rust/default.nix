@@ -17,12 +17,13 @@
     , checkFmt ? true
     , rust ? null
     , name ? null
+    , cargoDir ? src
     , nativeBuildInputs ? [ ]
     , preCheck ? ""
     , ...
     }@args:
     let
-      cargoToml = builtins.fromTOML (builtins.readFile (src + "/Cargo.toml"));
+      cargoToml = builtins.fromTOML (builtins.readFile ( cargoDir + "/Cargo.toml"));
       nameAttrs =
         if name == null then {
           pname = cargoToml.package.name;
@@ -46,7 +47,7 @@
         else preCheck;
 
       cargoLock = {
-        lockFile = src + "/Cargo.lock";
+        lockFile = cargoDir + "/Cargo.lock";
       };
 
     });
