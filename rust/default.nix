@@ -18,12 +18,14 @@
     , rust ? null
     , name ? null
     , crateRoot ? src
+    , cargoLock ? null
     , nativeBuildInputs ? [ ]
     , preCheck ? ""
     , ...
     }@args:
     let
       root = if isPath crateRoot then crateRoot else src + "/${crateRoot}";
+      cargoLockFile = if cargoLock == null then root + "/Cargo.lock" else cargoLock;
       cargoToml = builtins.fromTOML (builtins.readFile (root + "/Cargo.toml"));
       nameAttrs =
         if name == null then {
@@ -51,7 +53,7 @@
         else preCheck;
 
       cargoLock = {
-        lockFile = root + "/Cargo.lock";
+        lockFile = cargoLockFile;
       };
 
     });
