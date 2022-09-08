@@ -17,13 +17,14 @@
     , checkFmt ? true
     , rust ? null
     , name ? null
-    , cargoDir ? src
+    , crateRoot ? src
     , nativeBuildInputs ? [ ]
     , preCheck ? ""
     , ...
     }@args:
     let
-      cargoToml = builtins.fromTOML (builtins.readFile ( cargoDir + "/Cargo.toml"));
+      root = if isPath crateRoot then crateRoot else src + "/${crateRoot}";
+      cargoToml = builtins.fromTOML (builtins.readFile (root + "/Cargo.toml"));
       nameAttrs =
         if name == null then {
           pname = cargoToml.package.name;
@@ -31,8 +32,11 @@
         }
         else { inherit name; }
       ;
+      setSourceRoot =
+        if crateRoot == src then { }
+        else { setSourceRoot = ''sourceRoot=$(echo */${crateRoot})''; };
     in
-    pkgs.rustPlatform.buildRustPackage (nameAttrs // args // {
+    pkgs.rustPlatform.buildRustPackage (nameAttrs // setSourceRoot // args // {
       nativeBuildInputs =
         nativeBuildInputs ++
           (pkgs.lib.optional (! isNull rust) rust) ++
@@ -47,7 +51,7 @@
         else preCheck;
 
       cargoLock = {
-        lockFile = cargoDir + "/Cargo.lock";
+        lockFile = root + "/Cargo.lock";
       };
 
     });
