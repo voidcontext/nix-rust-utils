@@ -1,61 +1,51 @@
+{crane, pkgs, ...}: 
+
+with builtins;
+with pkgs.lib;
 {
-  apps.cargo = { pkgs, buildInputs ? [ ], cargo ? pkgs.cargo }:
-    let cargoPackage = cargo.overrideAttrs (oldAttrs: {
-      buildInputs =
-        (pkgs.lib.lists.optionals (builtins.hasAttr "buildInputs" oldAttrs) oldAttrs.buildInputs)
-        ++ buildInputs;
-    });
+  mkCrate =
+    let fromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
     in
-    {
-      type = "app";
-      program = "${cargoPackage}/bin/cargo";
-    };
-
-  mkRustBinary = pkgs:
-    with builtins;
     { src
-    , checkFmt ? true
-    , rust ? null
-    , name ? null
-    , crateRoot ? src
-    , cargoLock ? null
-    , nativeBuildInputs ? [ ]
-    , preCheck ? ""
-    , ...
-    }@args:
+    , pname ? fromCargoToml src ["package" "name"]
+    , version ? fromCargoToml src ["package" "version"]
+    , rustToolchain ? pkgs.rust-bin.stable.latest.default
+    }:
     let
-      root = if isPath crateRoot then crateRoot else src + "/${crateRoot}";
-      cargoLockFile = if cargoLock == null then root + "/Cargo.lock" else cargoLock;
-      cargoToml = builtins.fromTOML (builtins.readFile (root + "/Cargo.toml"));
-      nameAttrs =
-        if name == null then {
-          pname = cargoToml.package.name;
-          version = cargoToml.package.version;
-        }
-        else { inherit name; }
-      ;
-      setSourceRoot =
-        if crateRoot == src then { }
-        else { setSourceRoot = ''sourceRoot=$(echo */${crateRoot})''; };
-    in
-    pkgs.rustPlatform.buildRustPackage (nameAttrs // setSourceRoot // args // {
-      nativeBuildInputs =
-        nativeBuildInputs ++
-          (pkgs.lib.optional (! isNull rust) rust) ++
-          (pkgs.lib.optionals (checkFmt) [ pkgs.rustfmt ]);
+      nativeBuildInputs = with pkgs.lib;
+        (optional pkgs.stdenv.isLinux pkgs.pkg-config) ++ [ pkgs.cmake ];
 
-      preCheck =
-        if checkFmt
-        then ''
-          cargo fmt --check
-          ${preCheck}
-        ''
-        else preCheck;
+      buildInputs = with pkgs.lib;
+        (optional pkgs.stdenv.isLinux pkgs.openssl) ++
+        (optional (pkgs.system == "x86_64-darwin")
+          pkgs.darwin.apple_sdk.frameworks.Security);
 
-      cargoLock = {
-        lockFile = cargoLockFile;
+
+      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+      commonArgs = {
+        src = craneLib.cleanCargoSource src;
+
+        inherit buildInputs nativeBuildInputs;
       };
 
-    });
+      deps = craneLib.buildDepsOnly (commonArgs // {
+        pname = "${pname}-${version}-deps";
+      });
 
+      crate = craneLib.buildPackage {
+        src = craneLib.cleanCargoSource src;
+        inherit pname version;
+        cargoArtifacts = deps;
+        preCheck = ''
+          cargo fmt --check
+          cargo clippy  -- -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
+        '';
+
+        inherit buildInputs nativeBuildInputs;
+      };
+
+    in
+    crate
+    ;
 }

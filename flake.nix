@@ -1,21 +1,28 @@
 {
-  inputs.nixpkgs.url = "nixpkgs/release-22.05";
+  inputs.nixpkgs.url = "nixpkgs/release-22.11";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+  
+  inputs.crane.url = "github:ipetkov/crane";
+  inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
 
+  inputs.nil.url = "github:oxalica/nil?ref=2022-12-01"; 
 
-  outputs = { self, ... }@inputs:
+  outputs = { self, nil, ... }@inputs:
     inputs.flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ inputs.rust-overlay.overlays.default ];
 
         pkgs = import inputs.nixpkgs { inherit system overlays; };
 
-        rust = import ./rust;
+        callPackage = pkgs.lib.callPackageWith {inherit pkgs;};
 
-        checks = import ./checks pkgs system rust;
+        rust = callPackage ./rust { inherit (inputs) crane rust-overlay; };
+
+        checks = callPackage ./checks {inherit rust;} ;
       in
       {
         inherit rust;
@@ -29,7 +36,10 @@
         testPackages = checks.testPackages;
 
         devShells.default = pkgs.mkShell {
-          buildInputs = [ pkgs.nixpkgs-fmt ];
+          buildInputs = [ 
+            pkgs.nixpkgs-fmt
+            # nil.packages.${system}.default
+          ];
         };
       }
     );
