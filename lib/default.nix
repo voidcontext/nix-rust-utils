@@ -50,7 +50,7 @@ rec {
       inherit
         package
         rustToolchain
-        buldInputs
+        buildInputs
         nativeBuildInputs;
     }
 
