@@ -38,7 +38,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = [ 
             pkgs.nixpkgs-fmt
-            # nil.packages.${system}.default
+            nil.packages.${system}.default
           ];
         };
       }
