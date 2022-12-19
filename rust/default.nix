@@ -1,4 +1,4 @@
-{crane, pkgs, ...}: 
+{ crane, pkgs, ... }:
 
 with builtins;
 with pkgs.lib;
@@ -7,8 +7,8 @@ with pkgs.lib;
     let fromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
     in
     { src
-    , pname ? fromCargoToml src ["package" "name"]
-    , version ? fromCargoToml src ["package" "version"]
+    , pname ? fromCargoToml src [ "package" "name" ]
+    , version ? fromCargoToml src [ "package" "version" ]
     , rustToolchain ? pkgs.rust-bin.stable.latest.default
     }:
     let
@@ -47,5 +47,5 @@ with pkgs.lib;
 
     in
     crate
-    ;
+  ;
 }

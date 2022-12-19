@@ -1,4 +1,4 @@
-{pkgs, rust, ...}:
+{ pkgs, rust, ... }:
 
 let
   # Should build
