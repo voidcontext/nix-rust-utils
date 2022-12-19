@@ -1,4 +1,4 @@
-{ crane, pkgs, flake-utils, ... }:
+{ crane, pkgs, defaultRustToolchain, flake-utils, versions, ... }:
 
 with builtins;
 with pkgs.lib;
@@ -9,7 +9,7 @@ rec {
     { src
     , pname ? fromCargoToml src [ "package" "name" ]
     , version ? fromCargoToml src [ "package" "version" ]
-    , rustToolchain ? pkgs.rust-bin.stable.latest.default
+    , rustToolchain ? defaultRustToolchain
     }:
     let
       nativeBuildInputs = with pkgs.lib;
@@ -66,6 +66,7 @@ rec {
       devShells.default = pkgs.mkShell {
         buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
           crate.rustToolchain
+          (versions crate.rustToolchain)
           pkgs.cargo-outdated
           pkgs.cargo-watch
           pkgs.cargo-bloat

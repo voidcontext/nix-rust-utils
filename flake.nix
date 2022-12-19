@@ -20,7 +20,18 @@
 
             pkgs = import inputs.nixpkgs { inherit system overlays; };
 
-            callPackage = pkgs.lib.callPackageWith { nil = nil.packages.${system}.default; inherit pkgs flake-utils; };
+            defaultRustToolchain = pkgs.rust-bin.stable.latest.default;
+
+            versions = rustToolchain: pkgs.writeShellScriptBin "versions" ''
+            echo "nixpkgs: ${pkgs.lib.version}"
+            ${rustToolchain}/bin/rustc --version
+            ${rustToolchain}/bin/cargo --version
+            '';
+
+            callPackage = pkgs.lib.callPackageWith { 
+              nil = nil.packages.${system}.default; 
+              inherit pkgs flake-utils defaultRustToolchain versions; 
+            };
 
             lib = callPackage ./lib { inherit (inputs) crane rust-overlay; };
 
@@ -40,6 +51,8 @@
             devShells.default = pkgs.mkShell {
               buildInputs = [
                 pkgs.nixpkgs-fmt
+                defaultRustToolchain
+                (versions defaultRustToolchain)
                 nil.packages.${system}.default
               ];
             };
