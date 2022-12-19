@@ -21,4 +21,4 @@ jobs:
     - name: Flake Check
       run: nix flake check
     - name: Run additional checks
-      run: nix run .#check-scripts
+      run: nix run .#check-builds

@@ -1,8 +1,8 @@
-{ crane, pkgs, ... }:
+{ crane, pkgs, flake-utils, ... }:
 
 with builtins;
 with pkgs.lib;
-{
+rec {
   mkCrate =
     let fromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
     in
@@ -33,7 +33,7 @@ with pkgs.lib;
         pname = "${pname}-${version}-deps";
       });
 
-      crate = craneLib.buildPackage {
+      package = craneLib.buildPackage {
         src = craneLib.cleanCargoSource src;
         inherit pname version;
         cargoArtifacts = deps;
@@ -46,6 +46,34 @@ with pkgs.lib;
       };
 
     in
-    crate
+    {
+      inherit
+        package
+        rustToolchain
+        buldInputs
+        nativeBuildInputs;
+    }
+
   ;
+
+  mkOutputs = args:
+    let crate = mkCrate args;
+    in
+    {
+      checks.default = crate.package;
+      packages.default = crate.package;
+
+      devShells.default = pkgs.mkShell {
+        buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
+          crate.rustToolchain
+          pkgs.cargo-outdated
+          pkgs.cargo-watch
+          pkgs.cargo-bloat
+          pkgs.cargo-udeps
+          pkgs.rust-analyzer
+          pkgs.rustfmt
+          pkgs.nixpkgs-fmt
+        ];
+      };
+    };
 }

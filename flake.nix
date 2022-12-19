@@ -11,36 +11,43 @@
 
   inputs.nil.url = "github:oxalica/nil?ref=2022-12-01";
 
-  outputs = { self, nil, ... }@inputs:
-    inputs.flake-utils.lib.eachDefaultSystem (system:
-      let
-        overlays = [ inputs.rust-overlay.overlays.default ];
+  outputs = { self, nil, flake-utils, ... }@inputs:
+    let
+      outputs =
+        flake-utils.lib.eachDefaultSystem (system:
+          let
+            overlays = [ inputs.rust-overlay.overlays.default ];
 
-        pkgs = import inputs.nixpkgs { inherit system overlays; };
+            pkgs = import inputs.nixpkgs { inherit system overlays; };
 
-        callPackage = pkgs.lib.callPackageWith { inherit pkgs; };
+            callPackage = pkgs.lib.callPackageWith { nil = nil.packages.${system}.default; inherit pkgs flake-utils; };
 
-        rust = callPackage ./rust { inherit (inputs) crane rust-overlay; };
+            lib = callPackage ./lib { inherit (inputs) crane rust-overlay; };
 
-        checks = callPackage ./checks { inherit rust; };
-      in
-      {
-        inherit rust;
-        inherit (checks) checks;
+            checks = callPackage ./checks { inherit lib; };
+          in
+          {
+            inherit lib;
+            inherit (checks) checks;
 
-        apps.check-scripts = {
-          "type" = "app";
-          "program" = "${checks.scripts.check-builds-failing}/bin/check-builds-failing";
-        };
+            apps.check-builds = {
+              "type" = "app";
+              "program" = "${checks.scripts.check-builds}/bin/check-builds";
+            };
 
-        testPackages = checks.testPackages;
+            testPackages = checks.testPackages;
 
-        devShells.default = pkgs.mkShell {
-          buildInputs = [
-            pkgs.nixpkgs-fmt
-            nil.packages.${system}.default
-          ];
-        };
-      }
-    );
+            devShells.default = pkgs.mkShell {
+              buildInputs = [
+                pkgs.nixpkgs-fmt
+                nil.packages.${system}.default
+              ];
+            };
+          }
+        );
+    in
+    outputs // {
+      lib.mkOutputs = args:
+        flake-utils.lib.eachDefaultSystem (system: outputs.lib.${system}.mkOutputs args);
+    };
 }
