@@ -23,14 +23,14 @@
             defaultRustToolchain = pkgs.rust-bin.stable.latest.default;
 
             versions = rustToolchain: pkgs.writeShellScriptBin "versions" ''
-            echo "nixpkgs: ${pkgs.lib.version}"
-            ${rustToolchain}/bin/rustc --version
-            ${rustToolchain}/bin/cargo --version
+              echo "nixpkgs: ${pkgs.lib.version}"
+              ${rustToolchain}/bin/rustc --version
+              ${rustToolchain}/bin/cargo --version
             '';
 
-            callPackage = pkgs.lib.callPackageWith { 
-              nil = nil.packages.${system}.default; 
-              inherit pkgs flake-utils defaultRustToolchain versions; 
+            callPackage = pkgs.lib.callPackageWith {
+              nil = nil.packages.${system}.default;
+              inherit pkgs flake-utils defaultRustToolchain versions;
             };
 
             lib = callPackage ./lib { inherit (inputs) crane rust-overlay; };
