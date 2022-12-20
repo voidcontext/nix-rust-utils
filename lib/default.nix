@@ -1,15 +1,24 @@
-{ crane, pkgs, defaultRustToolchain, flake-utils, versions, ... }:
+{ inputs, ... }:
 
 with builtins;
-with pkgs.lib;
 rec {
-  mkCrate =
+  mkPkgs = { system, nixpkgs ? inputs.nixpkgs, rust-overlay ? inputs.rust-overlay }:
+    import nixpkgs {
+      inherit system;
+
+      overlays = [ rust-overlay.overlays.default ];
+    };
+
+  mkDefaultRustToolchain = { pkgs, ... }: pkgs.rust-bin.stable.latest.default;
+
+  mkCrateFn = { pkgs, ... }:
+    with pkgs.lib;
     let fromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
     in
     { src
     , pname ? fromCargoToml src [ "package" "name" ]
     , version ? fromCargoToml src [ "package" "version" ]
-    , rustToolchain ? defaultRustToolchain
+    , rustToolchain ? mkDefaultRustToolchain { inherit pkgs; }
     }:
     let
       nativeBuildInputs = with pkgs.lib;
@@ -20,8 +29,7 @@ rec {
         (optional (pkgs.system == "x86_64-darwin")
           pkgs.darwin.apple_sdk.frameworks.Security);
 
-
-      craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+      craneLib = (inputs.crane.mkLib pkgs).overrideToolchain rustToolchain;
 
       commonArgs = {
         src = craneLib.cleanCargoSource src;
@@ -52,12 +60,19 @@ rec {
         rustToolchain
         buildInputs
         nativeBuildInputs;
-    }
+    };
 
-  ;
+  versions = { pkgs, rustToolchain }: pkgs.writeShellScriptBin "versions" ''
+    echo "nixpkgs: ${pkgs.lib.version}"
+    ${rustToolchain}/bin/rustc --version
+    ${rustToolchain}/bin/cargo --version
+  '';
 
-  mkOutputs = args:
-    let crate = mkCrate args;
+  mkOutputs = system: args:
+    let
+      pkgs = mkPkgs { inherit system; };
+      mkCrate = mkCrateFn { inherit pkgs; };
+      crate = mkCrate args;
     in
     {
       checks.default = crate.package;
@@ -66,7 +81,7 @@ rec {
       devShells.default = pkgs.mkShell {
         buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
           crate.rustToolchain
-          (versions crate.rustToolchain)
+          (versions { inherit pkgs; inherit (crate) rustToolchain; })
           pkgs.cargo-outdated
           pkgs.cargo-watch
           pkgs.cargo-bloat

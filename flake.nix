@@ -13,29 +13,13 @@
 
   outputs = { self, nil, flake-utils, ... }@inputs:
     let
+      lib = import ./lib { inherit inputs; };
       outputs =
         flake-utils.lib.eachDefaultSystem (system:
           let
-            overlays = [ inputs.rust-overlay.overlays.default ];
-
-            pkgs = import inputs.nixpkgs { inherit system overlays; };
-
-            defaultRustToolchain = pkgs.rust-bin.stable.latest.default;
-
-            versions = rustToolchain: pkgs.writeShellScriptBin "versions" ''
-              echo "nixpkgs: ${pkgs.lib.version}"
-              ${rustToolchain}/bin/rustc --version
-              ${rustToolchain}/bin/cargo --version
-            '';
-
-            callPackage = pkgs.lib.callPackageWith {
-              nil = nil.packages.${system}.default;
-              inherit pkgs flake-utils defaultRustToolchain versions;
-            };
-
-            lib = callPackage ./lib { inherit (inputs) crane rust-overlay; };
-
-            checks = callPackage ./checks { inherit lib; };
+            pkgs = lib.mkPkgs { inherit system; };
+            defaultRustToolchain = lib.mkDefaultRustToolchain { inherit pkgs; };
+            checks = import ./checks { inherit pkgs lib; };
           in
           {
             inherit lib;
@@ -52,7 +36,7 @@
               buildInputs = [
                 pkgs.nixpkgs-fmt
                 defaultRustToolchain
-                (versions defaultRustToolchain)
+                (lib.versions { inherit pkgs; rustToolchain = defaultRustToolchain; })
                 nil.packages.${system}.default
               ];
             };
@@ -61,6 +45,6 @@
     in
     outputs // {
       lib.mkOutputs = args:
-        flake-utils.lib.eachDefaultSystem (system: outputs.lib.${system}.mkOutputs args);
+        flake-utils.lib.eachDefaultSystem (system: lib.mkOutputs system args);
     };
 }
