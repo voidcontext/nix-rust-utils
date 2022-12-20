@@ -30,7 +30,7 @@ rec {
       };
 
       deps = craneLib.buildDepsOnly (commonArgs // {
-        pname = "${pname}-${version}-deps";
+        inherit pname version;
       });
 
       package = craneLib.buildPackage {
