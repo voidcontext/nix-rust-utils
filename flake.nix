@@ -52,14 +52,12 @@
             };
           }
         );
-    in
-    outputs // {
-      lib.mkOutputs = args:
-        flake-utils.lib.eachDefaultSystem (system:
+
+        mkOutputs = selectMkCrateFn: system: args:
           let
             pkgs = mkDefaultPkgs system;
             lib = mkLib { inherit pkgs crane; rustToolchain = mkRustToolchain pkgs; };
-            crate = lib.mkCrate args;
+            crate = (selectMkCrateFn lib) args;
           in
           {
             checks.default = crate.package;
@@ -78,7 +76,16 @@
                 pkgs.nixpkgs-fmt
               ];
             };
-          }
+          };
+    in
+    outputs // {
+      lib.mkOutputs = args:
+        flake-utils.lib.eachDefaultSystem (system:
+          mkOutputs (lib: lib.mkCrate) system args
+        );
+      lib.mkWasmOutputs = args:
+        flake-utils.lib.eachDefaultSystem (system:
+          mkOutputs (lib: lib.mkWasmCrate) system args
         );
     };
 }

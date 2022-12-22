@@ -2,9 +2,13 @@
 
 { pkgs, rustToolchain, ... }:
 
+with builtins;
 let
-  callPackage = pkgs.lib.callPackageWith { inherit pkgs rustToolchain crane; };
+  attrFromCargoToml = src: path: pkgs.lib.attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
+  callPackage = pkgs.lib.callPackageWith { inherit pkgs rustToolchain crane callPackage attrFromCargoToml; };
 in
 {
   mkCrate = callPackage ./mkCrate.nix { };
+  # TODO: mkWasmCrate does a bit more, it also generates JS bindings, its name should reflect this
+  mkWasmCrate = callPackage ./mkWasmCrate.nix {};
 }

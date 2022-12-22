@@ -1,18 +1,22 @@
-{ pkgs, rustToolchain, crane, ... }:
+{ pkgs, crane, rustToolchain, attrFromCargoToml, ... }@moduleArgs:
 
 with builtins;
 with pkgs.lib;
-let fromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
-in
 { src
-, pname ? fromCargoToml src [ "package" "name" ]
-, version ? fromCargoToml src [ "package" "version" ]
+, pname ? attrFromCargoToml src [ "package" "name" ]
+, version ? attrFromCargoToml src [ "package" "version" ]
+, rustToolchain ? moduleArgs.rustToolchain
+, buildInputs ? []
+, doCheck ? true
+, cargoExtraArgs ? ""
+, packagePostBuild ? ""
 }:
 let
-  nativeBuildInputs = with pkgs.lib;
+  nativeBuildInputs =
     (optional pkgs.stdenv.isLinux pkgs.pkg-config) ++ [ pkgs.cmake ];
 
-  buildInputs = with pkgs.lib;
+  crateBuildInputs =
+    buildInputs ++
     (optional pkgs.stdenv.isLinux pkgs.openssl) ++
     (optional (pkgs.system == "x86_64-darwin")
       pkgs.darwin.apple_sdk.frameworks.Security);
@@ -20,26 +24,28 @@ let
   craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
   commonArgs = {
+    inherit pname version;
     src = craneLib.cleanCargoSource src;
 
-    inherit buildInputs nativeBuildInputs;
+    buildInputs = crateBuildInputs;
+
+    inherit doCheck cargoExtraArgs nativeBuildInputs;
   };
 
-  deps = craneLib.buildDepsOnly (commonArgs // {
-    inherit pname version;
-  });
+  deps = craneLib.buildDepsOnly commonArgs;
 
-  package = craneLib.buildPackage {
-    src = craneLib.cleanCargoSource src;
-    inherit pname version;
+  package = craneLib.buildPackage (commonArgs // {
     cargoArtifacts = deps;
+
     preCheck = ''
       cargo fmt --check
-      cargo clippy  -- -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
+      cargo clippy ${cargoExtraArgs} -- -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
     '';
 
-    inherit buildInputs nativeBuildInputs;
-  };
+    postBuild = packagePostBuild;
+
+    inherit cargoExtraArgs;
+  });
 in
 {
   inherit

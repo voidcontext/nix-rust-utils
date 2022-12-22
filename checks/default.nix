@@ -4,6 +4,8 @@ let
   # Should build
   rust-binary-test = (lib.mkCrate { src = ./rust/package; }).package;
 
+  rust-wasm = (lib.mkWasmCrate { src = ./rust/wasm-simple; }).package;
+
   # Should fail
   rust-binary-test-fmt-error = (lib.mkCrate { src = ./rust/package-with-fmt-error; }).package;
   # rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
@@ -51,13 +53,18 @@ in
   checks."lib.mkCrate.package" =
     rust-binary-test;
 
+  checks."lib.mkWasmCrate.package" =
+    rust-wasm;
+
   scripts = {
     inherit check-builds;
   };
 
   testPackages = {
     inherit
+      rust-binary-test
       rust-binary-test-fmt-error
+      rust-wasm
       # rust-binary-test-custom-attrs
       rust-binary-test-rust-can-be-overridden;
   };
