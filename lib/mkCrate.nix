@@ -6,7 +6,7 @@ with pkgs.lib;
 , pname ? attrFromCargoToml src [ "package" "name" ]
 , version ? attrFromCargoToml src [ "package" "version" ]
 , rustToolchain ? moduleArgs.rustToolchain
-, buildInputs ? []
+, buildInputs ? [ ]
 , doCheck ? true
 , cargoExtraArgs ? ""
 , packagePostBuild ? ""

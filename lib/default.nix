@@ -10,5 +10,5 @@ in
 {
   mkCrate = callPackage ./mkCrate.nix { };
   # TODO: mkWasmCrate does a bit more, it also generates JS bindings, its name should reflect this
-  mkWasmCrate = callPackage ./mkWasmCrate.nix {};
+  mkWasmCrate = callPackage ./mkWasmCrate.nix { };
 }

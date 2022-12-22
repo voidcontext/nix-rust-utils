@@ -53,30 +53,30 @@
           }
         );
 
-        mkOutputs = selectMkCrateFn: system: args:
-          let
-            pkgs = mkDefaultPkgs system;
-            lib = mkLib { inherit pkgs crane; rustToolchain = mkRustToolchain pkgs; };
-            crate = (selectMkCrateFn lib) args;
-          in
-          {
-            checks.default = crate.package;
-            packages.default = crate.package;
+      mkOutputs = selectMkCrateFn: system: args:
+        let
+          pkgs = mkDefaultPkgs system;
+          lib = mkLib { inherit pkgs crane; rustToolchain = mkRustToolchain pkgs; };
+          crate = (selectMkCrateFn lib) args;
+        in
+        {
+          checks.default = crate.package;
+          packages.default = crate.package;
 
-            devShells.default = pkgs.mkShell {
-              buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
-                crate.rustToolchain
-                (versions { inherit pkgs; inherit (crate) rustToolchain; })
-                pkgs.cargo-outdated
-                pkgs.cargo-watch
-                pkgs.cargo-bloat
-                pkgs.cargo-udeps
-                pkgs.rust-analyzer
-                pkgs.rustfmt
-                pkgs.nixpkgs-fmt
-              ];
-            };
+          devShells.default = pkgs.mkShell {
+            buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
+              crate.rustToolchain
+              (versions { inherit pkgs; inherit (crate) rustToolchain; })
+              pkgs.cargo-outdated
+              pkgs.cargo-watch
+              pkgs.cargo-bloat
+              pkgs.cargo-udeps
+              pkgs.rust-analyzer
+              pkgs.rustfmt
+              pkgs.nixpkgs-fmt
+            ];
           };
+        };
     in
     outputs // {
       lib.mkOutputs = args:
