@@ -1,14 +1,13 @@
-{ pkgs, lib, ... }:
+{ pkgs, mkLib, lib, ... }:
 
 let
-  mkCrate = lib.mkCrateFn { inherit pkgs; };
   # Should build
-  rust-binary-test = (mkCrate { src = ./rust/package; }).package;
+  rust-binary-test = (lib.mkCrate { src = ./rust/package; }).package;
 
   # Should fail
-  rust-binary-test-fmt-error = (mkCrate { src = ./rust/package-with-fmt-error; }).package;
+  rust-binary-test-fmt-error = (lib.mkCrate { src = ./rust/package-with-fmt-error; }).package;
   # rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
-  rust-binary-test-rust-can-be-overridden = (mkCrate { src = ./rust/package; rustToolchain = pkgs.rust-bin.stable."1.50.0".minimal; }).package;
+  rust-binary-test-rust-can-be-overridden = ((mkLib { inherit pkgs; rustToolchain = pkgs.rust-bin.stable."1.50.0".minimal; }).mkCrate { src = ./rust/package; }).package;
 
   assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
     test_package=$1

@@ -11,18 +11,28 @@
 
   inputs.nil.url = "github:oxalica/nil?ref=2022-12-01";
 
-  outputs = { self, nil, flake-utils, ... }@inputs:
+  outputs = { self, nil, crane, flake-utils, ... }@inputs:
     let
-      lib = import ./lib { inherit inputs; };
+      mkLib = import ./lib { inherit crane; };
+      versions = import ./packages/versions.nix;
+
+      mkDefaultPkgs = system:
+        import inputs.nixpkgs {
+          inherit system;
+
+          overlays = [ inputs.rust-overlay.overlays.default ];
+        };
+
+      mkRustToolchain = pkgs: pkgs.rust-bin.stable.latest.default;
       outputs =
         flake-utils.lib.eachDefaultSystem (system:
           let
-            pkgs = lib.mkPkgs { inherit system; };
-            defaultRustToolchain = lib.mkDefaultRustToolchain { inherit pkgs; };
-            checks = import ./checks { inherit pkgs lib; };
+            pkgs = mkDefaultPkgs system;
+            checks = import ./checks { inherit pkgs mkLib; lib = mkLib { inherit pkgs crane rustToolchain; }; };
+            rustToolchain = (mkRustToolchain pkgs);
           in
           {
-            inherit lib;
+            inherit mkLib;
             inherit (checks) checks;
 
             apps.check-builds = {
@@ -35,8 +45,8 @@
             devShells.default = pkgs.mkShell {
               buildInputs = [
                 pkgs.nixpkgs-fmt
-                defaultRustToolchain
-                (lib.versions { inherit pkgs; rustToolchain = defaultRustToolchain; })
+                rustToolchain
+                (versions { inherit pkgs rustToolchain; })
                 nil.packages.${system}.default
               ];
             };
@@ -45,6 +55,30 @@
     in
     outputs // {
       lib.mkOutputs = args:
-        flake-utils.lib.eachDefaultSystem (system: lib.mkOutputs system args);
+        flake-utils.lib.eachDefaultSystem (system:
+          let
+            pkgs = mkDefaultPkgs system;
+            lib = mkLib { inherit pkgs crane; rustToolchain = mkRustToolchain pkgs; };
+            crate = lib.mkCrate args;
+          in
+          {
+            checks.default = crate.package;
+            packages.default = crate.package;
+
+            devShells.default = pkgs.mkShell {
+              buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
+                crate.rustToolchain
+                (versions { inherit pkgs; inherit (crate) rustToolchain; })
+                pkgs.cargo-outdated
+                pkgs.cargo-watch
+                pkgs.cargo-bloat
+                pkgs.cargo-udeps
+                pkgs.rust-analyzer
+                pkgs.rustfmt
+                pkgs.nixpkgs-fmt
+              ];
+            };
+          }
+        );
     };
 }
