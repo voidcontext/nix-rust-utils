@@ -8,7 +8,7 @@ let
 
   # Should fail
   rust-binary-test-fmt-error = (lib.mkCrate { src = ./rust/package-with-fmt-error; }).package;
-  # rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
+  rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
   rust-binary-test-rust-can-be-overridden = ((mkLib { inherit pkgs; rustToolchain = pkgs.rust-bin.stable."1.50.0".minimal; }).mkCrate { src = ./rust/package; }).package;
 
   assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
@@ -42,7 +42,7 @@ let
   check-builds = pkgs.writeScriptBin "check-builds" ''
     set -e
     ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-fmt-error"
-    # ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-custom-attrs"
+    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-custom-attrs"
     ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-rust-can-be-overridden"
 
     ${assert-build-success-in-dir}/bin/assert-nix-build-success mk-output-simple
@@ -65,7 +65,7 @@ in
       rust-binary-test
       rust-binary-test-fmt-error
       rust-wasm
-      # rust-binary-test-custom-attrs
+      rust-binary-test-custom-attrs
       rust-binary-test-rust-can-be-overridden;
   };
 }
