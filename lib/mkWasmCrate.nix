@@ -21,7 +21,7 @@ in
 , version ? attrFromCargoToml src [ "package" "version" ]
 , rustToolchain ? defaultToolchain
 , doCheck ? true
-}: # TODO: passthrough all arguments
+}:
 let
   binaryName = builtins.replaceStrings [ "-" ] [ "_" ] pname;
 in
@@ -36,13 +36,18 @@ mkCrate {
     pkgs.wasm-bindgen-cli
   ];
 
-  packagePostBuild = ''
+  # TODO: make the generation of JS bindings optional and configurable
+  packageHooks = {
+    postBuild = ''
           wasm-bindgen                                                          \
             --target web                                                        \
             --out-dir dist                                                      \
             --no-typescript                                                     \
             target/wasm32-unknown-unknown/release/${binaryName}.wasm
-    		'';
+      	'';
 
-  # TODO: postInstall -> copy js files over too
+    postInstall = ''
+      cp dist/* $out/lib
+    '';
+  };
 }
