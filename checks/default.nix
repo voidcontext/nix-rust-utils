@@ -1,6 +1,7 @@
 { pkgs, mkLib, lib, rootDir, ... }:
 
 let
+  nixCommand = "${pkgs.nix}/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes";
   # Should build
   rust-binary-test = (lib.mkCrate { src = ./rust/package; }).package;
 
@@ -23,7 +24,7 @@ let
       mkdir -p $out/home
       HOME=$out/home
 
-      result=$(nix build -L ${rootDir}#testPackages.${pkgs.system}.${name} 2>$out/build.log || echo "failed")
+      result=$(${nixCommand} build -L ${rootDir}#testPackages.${pkgs.system}.${name} 2>$out/build.log || echo "failed")
 
       if [ "$result" != "failed" ]; then
         echo "Build of ${name} didn't fail."
@@ -50,7 +51,7 @@ let
       # patching the url of nix-rust-utils to the current source
       sed -i 's@"../../"@"${rootDir}"@' flake.nix
 
-      nix build --show-trace
+      ${nixCommand} build --show-trace
 
       result=$(./result/bin/${binName})
 
