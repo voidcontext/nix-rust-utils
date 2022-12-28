@@ -20,5 +20,3 @@ jobs:
       run: nix run nixpkgs#nixpkgs-fmt --inputs-from . -- . --check
     - name: Flake Check
       run: nix flake check
-    - name: Run additional checks
-      run: nix run .#check-builds

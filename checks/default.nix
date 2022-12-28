@@ -1,4 +1,4 @@
-{ pkgs, mkLib, lib, ... }:
+{ pkgs, mkLib, lib, rootDir, ... }:
 
 let
   # Should build
@@ -11,44 +11,60 @@ let
   rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
   rust-binary-test-rust-can-be-overridden = ((mkLib { inherit pkgs; rustToolchain = pkgs.rust-bin.stable."1.50.0".minimal; }).mkCrate { src = ./rust/package; }).package;
 
-  assert-build-failure = pkgs.writeScriptBin "assert-build-failure" ''
-    test_package=$1
+  assertFailure = name: pkgs.stdenv.mkDerivation {
+    pname = "${name}-failure";
+    version = "0.1.0";
 
-    result=$(${pkgs.nix}/bin/nix build .#testPackages.${pkgs.system}.$test_package || echo "failed")
+    src = rootDir;
 
-    if [ "$result" != "failed" ]; then
-      echo "Build of $test_package didn't fail."
-      exit 1
-    fi
-  '';
+    buildInputs = [ pkgs.nix ];
 
-  assert-build-success-in-dir = pkgs.writeScriptBin "assert-nix-build-success" ''
-    dir=$1
+    buildPhase = ''
+      mkdir -p $out/home
+      HOME=$out/home
 
-    path=checks/nix/$dir
+      result=$(nix build -L ${rootDir}#testPackages.${pkgs.system}.${name} 2>$out/build.log || echo "failed")
 
-    cd $path
+      if [ "$result" != "failed" ]; then
+        echo "Build of ${name} didn't fail."
+        exit 1
+      fi
+    '';
 
-    nix build
+    installPhase = "echo 'Skipping installPhase...'";
+  };
 
-    result=$(./result/bin/example-package)
+  assertResult = name: src: binName: expected: pkgs.stdenv.mkDerivation {
+    pname = "${name}-result";
+    version = "0.1.0";
 
-    if [ "$result" != "Hello, world!" ]; then
-      echo "Result was $result instead of 'Hello, world!'."
-      exit 1
-    fi
-  '';
+    src = rootDir;
 
-  check-builds = pkgs.writeScriptBin "check-builds" ''
-    set -e
-    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-fmt-error"
-    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-custom-attrs"
-    ${assert-build-failure}/bin/assert-build-failure "rust-binary-test-rust-can-be-overridden"
+    buildInputs = [ pkgs.nix ];
 
-    ${assert-build-success-in-dir}/bin/assert-nix-build-success mk-output-simple
-  '';
+    buildPhase = ''
+      mkdir -p $out/home
+      HOME=$out/home
+
+      cd ${src}
+      # patching the url of nix-rust-utils to the current source
+      sed -i 's@"../../"@"${rootDir}"@' flake.nix
+
+      nix build --show-trace
+
+      result=$(./result/bin/${binName})
+
+      echo "Result is '$result'";
+      if [ "$result" != "${expected}" ]; then
+        echo "Result was $result instead of '${expected}'."
+        exit 1
+      fi
+    '';
+
+    installPhase = "echo 'Skipping installPhase...'";
+  };
 in
-{
+rec {
 
   checks."lib.mkCrate.package" =
     rust-binary-test;
@@ -56,11 +72,21 @@ in
   checks."lib.mkWasmCrate.package" =
     rust-wasm;
 
-  scripts = {
-    inherit check-builds;
-  };
+  checks."lib.mkCrate.error.rust-binary-test-fmt-error" =
+    assertFailure "rust-binary-test-fmt-error";
+
+  checks."lib.mkCreate.error.rust-binary-test-custom-attrs" =
+    assertFailure "rust-binary-test-custom-attrs";
+
+  checks."lib.mkCreate.error.rust-binary-test-rust-can-be-overridden" =
+    assertFailure "rust-binary-test-rust-can-be-overridden";
+
+  checks."examples.mk-output-simple" =
+    assertResult "mk-output-simple" "examples/mk-output-simple" "example-package" "Hello, world!";
 
   testPackages = {
+    "check-example-mk-output-simple" =
+      checks."examples.mk-output-simple";
     inherit
       rust-binary-test
       rust-binary-test-fmt-error
