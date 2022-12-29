@@ -4,14 +4,14 @@
 
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
 
   inputs.crane.url = "github:ipetkov/crane";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
+  inputs.crane.inputs.flake-utils.follows = "flake-utils";
 
-  inputs.nil.url = "github:oxalica/nil?ref=2022-12-01";
-
-  outputs = { self, nil, crane, flake-utils, ... }@inputs:
+  outputs = { self, crane, flake-utils, ... }@inputs:
     let
       mkLib = import ./lib { inherit crane; };
       versions = import ./packages/versions.nix;
@@ -42,7 +42,6 @@
                 pkgs.nixpkgs-fmt
                 rustToolchain
                 (versions { inherit pkgs rustToolchain; })
-                nil.packages.${system}.default
               ];
             };
           }
