@@ -9,26 +9,27 @@ with pkgs.lib;
 , buildInputs ? [ ]
 , nativeBuildInputs ? [ ]
 , cargoExtraArgs ? ""
-, depsHooks ? { }
-, packageHooks ? { }
+, depsAttrs ? { }
+, packageAttrs ? { }
 , ...
 }@args:
 let
   cleanedArgs = (builtins.removeAttrs args [
     "rustToolchain"
-    "depsHooks"
-    "packageHooks"
+    "depsAttrs"
+    "packageAttrs"
   ])
   ;
   commonNativeBuildInputs =
-    nativeBuildInputs ++
-    (optional pkgs.stdenv.isLinux pkgs.pkg-config) ++ [ pkgs.cmake ];
+    (optional pkgs.stdenv.isLinux pkgs.pkg-config) ++ [ pkgs.cmake ] ++
+    nativeBuildInputs;
 
   commonBuildInputs =
-    buildInputs ++
     (optional pkgs.stdenv.isLinux pkgs.openssl) ++
     (optional (pkgs.system == "x86_64-darwin")
-      pkgs.darwin.apple_sdk.frameworks.Security);
+      pkgs.darwin.apple_sdk.frameworks.Security) ++
+    buildInputs
+  ;
 
   craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
@@ -42,13 +43,13 @@ let
     inherit cargoExtraArgs;
   });
 
-  deps = craneLib.buildDepsOnly (depsHooks // commonArgs);
+  deps = craneLib.buildDepsOnly (depsAttrs // commonArgs);
 
-  package = craneLib.buildPackage (packageHooks // commonArgs // {
+  package = craneLib.buildPackage (packageAttrs // commonArgs // {
     cargoArtifacts = deps;
 
     preCheck = ''
-      ${ if (hasAttr "preCheck" packageHooks) then packageHooks.preCheck else ""}
+      ${ if (hasAttr "preCheck" packageAttrs) then packageAttrs.preCheck else ""}
       cargo fmt --check
       cargo clippy ${cargoExtraArgs} -- -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
     '';

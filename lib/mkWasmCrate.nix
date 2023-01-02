@@ -2,7 +2,7 @@
 
 let
   mkCrate = callPackage ./mkCrate.nix { };
-  defaultToolchain = pkgs.rust-bin.stable."1.61.0".default.override {
+  defaultToolchain = pkgs.rust-bin.stable.latest.default.override {
     targets = [ "wasm32-unknown-unknown" ];
   };
   testRunnerConfigured = src:
@@ -37,7 +37,7 @@ mkCrate {
   ];
 
   # TODO: make the generation of JS bindings optional and configurable
-  packageHooks = {
+  packageAttrs = {
     postBuild = ''
           wasm-bindgen                                                          \
             --target web                                                        \

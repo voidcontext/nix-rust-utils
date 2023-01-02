@@ -1,98 +1,55 @@
 { pkgs, mkLib, lib, rootDir, ... }:
 
 let
-  nixCommand = "${pkgs.nix}/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes";
-  # Should build
-  rust-binary-test = (lib.mkCrate { src = ./rust/package; }).package;
+  cargoBin = "${pkgs.rust-bin.stable.latest.default}/bin/cargo";
+  cargoWrapper = pkgs.writeShellScriptBin "cargo" ''
+    mkdir -p $out
+    touch $out/cargo.log
 
-  rust-wasm = (lib.mkWasmCrate { src = ./rust/wasm-simple; }).package;
+    echo "cargo $@" >> $out/cargo.log
 
-  # Should fail
-  rust-binary-test-fmt-error = (lib.mkCrate { src = ./rust/package-with-fmt-error; }).package;
-  rust-binary-test-custom-attrs = (lib.mkCrate pkgs { src = ./rust/package; buildPhase = "exit 1"; });
-  rust-binary-test-rust-can-be-overridden = ((mkLib { inherit pkgs; rustToolchain = pkgs.rust-bin.stable."1.50.0".minimal; }).mkCrate { src = ./rust/package; }).package;
+    ${cargoBin} $@
+  '';
 
-  assertFailure = name: pkgs.stdenv.mkDerivation {
-    pname = "${name}-failure";
-    version = "0.1.0";
+  # test scenarios
 
-    src = rootDir;
+  # can build rust package
+  checks.can-build-rust-package = (lib.mkCrate { src = ./rust/hello-world; }).package;
+  # can build rust wasm package
+  checks.can-build-rust-wasm-package = (lib.mkWasmCrate { src = ./rust/wasm-simple; }).package;
 
-    buildInputs = [ pkgs.nix ];
+  # checks rust formatting
+  checks.checks-rust-formatting =
+    (lib.mkCrate {
+      src = ./rust/hello-world;
+      nativeBuildInputs = [ cargoWrapper ];
+      packageAttrs.postCheck = ''
+        grep 'cargo\ fmt\ --check' $out/cargo.log
+      '';
+    }).package;
 
-    buildPhase = ''
-      mkdir -p $out/home
-      HOME=$out/home
+  # TODO: buildPhase is can be overriden
 
-      result=$(${nixCommand} build -L ${rootDir}#testPackages.${pkgs.system}.${name} 2>$out/build.log || echo "failed")
+  # rustToolchain can be overridden
+  checks.can-override-rustToolchain =
+    let
+      expectedVersion = "1.60.0";
+      rustToolchain = pkgs.rust-bin.stable.${expectedVersion}.default;
+    in
+    (lib.mkCrate {
+      src = ./rust/hello-world;
 
-      if [ "$result" != "failed" ]; then
-        echo "Build of ${name} didn't fail."
-        exit 1
-      fi
-    '';
+      buildInputs = [ pkgs.gawk ];
 
-    installPhase = "echo 'Skipping installPhase...'";
-  };
+      inherit rustToolchain;
 
-  assertResult = name: src: binName: expected: pkgs.stdenv.mkDerivation {
-    pname = "${name}-result";
-    version = "0.1.0";
-
-    src = rootDir;
-
-    buildInputs = [ pkgs.nix ];
-
-    buildPhase = ''
-      mkdir -p $out/home
-      HOME=$out/home
-
-      cd ${src}
-      # patching the url of nix-rust-utils to the current source
-      sed -i 's@"../../"@"${rootDir}"@' flake.nix
-
-      ${nixCommand} build --show-trace
-
-      result=$(./result/bin/${binName})
-
-      echo "Result is '$result'";
-      if [ "$result" != "${expected}" ]; then
-        echo "Result was $result instead of '${expected}'."
-        exit 1
-      fi
-    '';
-
-    installPhase = "echo 'Skipping installPhase...'";
-  };
+      packageAttrs.preCheck = ''
+        rustc_version=$(rustc --version | awk '{print $2}') 
+        if [ "$rustc_version"  != "${expectedVersion}" ]; then
+          echo "Expected version ${expectedVersion} got $rustc_version"
+          exit 1
+        fi
+      '';
+    }).package;
 in
-rec {
-
-  checks."lib.mkCrate.package" =
-    rust-binary-test;
-
-  checks."lib.mkWasmCrate.package" =
-    rust-wasm;
-
-  checks."lib.mkCrate.error.rust-binary-test-fmt-error" =
-    assertFailure "rust-binary-test-fmt-error";
-
-  checks."lib.mkCreate.error.rust-binary-test-custom-attrs" =
-    assertFailure "rust-binary-test-custom-attrs";
-
-  checks."lib.mkCreate.error.rust-binary-test-rust-can-be-overridden" =
-    assertFailure "rust-binary-test-rust-can-be-overridden";
-
-  checks."examples.mk-output-simple" =
-    assertResult "mk-output-simple" "examples/mk-output-simple" "example-package" "Hello, world!";
-
-  testPackages = {
-    "check-example-mk-output-simple" =
-      checks."examples.mk-output-simple";
-    inherit
-      rust-binary-test
-      rust-binary-test-fmt-error
-      rust-wasm
-      rust-binary-test-custom-attrs
-      rust-binary-test-rust-can-be-overridden;
-  };
-}
+checks

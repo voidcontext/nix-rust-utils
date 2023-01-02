@@ -28,12 +28,15 @@
         flake-utils.lib.eachDefaultSystem (system:
           let
             pkgs = mkDefaultPkgs system;
-            checks = import ./checks { inherit pkgs mkLib; lib = mkLib { inherit pkgs crane rustToolchain; }; rootDir = ./.; };
+            checks = import ./checks {
+              inherit pkgs mkLib;
+              lib = mkLib { inherit pkgs crane rustToolchain; };
+              rootDir = ./.;
+            };
             rustToolchain = (mkRustToolchain pkgs);
           in
           {
-            inherit mkLib;
-            inherit (checks) checks;
+            inherit checks mkLib;
 
             testPackages = checks.testPackages;
 
