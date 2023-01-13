@@ -32,7 +32,7 @@
             lib = mkLib { inherit pkgs crane rustToolchain; };
 
             checks = import ./checks {
-              inherit pkgs mkLib;
+              inherit pkgs lib mkLib;
               rootDir = ./.;
             };
             rustToolchain = (mkRustToolchain pkgs);
@@ -68,13 +68,15 @@
     outputs // {
       inherit mkLib;
 
-      lib.mkOutputs = args:
-        flake-utils.lib.eachDefaultSystem (system:
-          mkOutputs (lib: lib.mkCrate) system args
-        );
-      lib.mkWasmOutputs = args:
-        flake-utils.lib.eachDefaultSystem (system:
-          mkOutputs (lib: lib.mkWasmCrate) system args
-        );
+      lib = outputs.lib // {
+        mkOutputs = args:
+          flake-utils.lib.eachDefaultSystem (system:
+            mkOutputs (lib: lib.mkCrate) system args
+          );
+        mkWasmOutputs = args:
+          flake-utils.lib.eachDefaultSystem (system:
+            mkOutputs (lib: lib.mkWasmCrate) system args
+          );
+      };
     };
 }
