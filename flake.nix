@@ -29,7 +29,7 @@
         flake-utils.lib.eachDefaultSystem (system:
           let
             pkgs = mkDefaultPkgs system;
-            lib = mkLib { inherit pkgs crane rustToolchain; };
+            lib = mkLib { inherit pkgs rustToolchain; };
 
             checks = import ./checks {
               inherit pkgs lib mkLib;
@@ -39,6 +39,8 @@
           in
           {
             inherit checks lib;
+
+            env = { inherit pkgs rustToolchain;};
 
             testPackages = checks.testPackages;
 
