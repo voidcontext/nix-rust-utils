@@ -20,34 +20,43 @@ in
 , pname ? attrFromCargoToml src [ "package" "name" ]
 , version ? attrFromCargoToml src [ "package" "version" ]
 , rustToolchain ? defaultToolchain
+, buildInputs ? []
+, packageAttrs ? {}
+, cargoExtraArgs ? ""
 , doCheck ? true
-}:
+, 
+}@args:
 let
   binaryName = builtins.replaceStrings [ "-" ] [ "_" ] pname;
 in
 assert pkgs.lib.asserts.assertMsg (!doCheck || (testRunnerConfigured src)) "doCheck must be false or a test runner must be configured";
-mkCrate {
-  inherit src pname version rustToolchain doCheck;
+mkCrate (args // {
 
-  cargoExtraArgs = "--target=wasm32-unknown-unknown";
+  inherit pname version rustToolchain;
+
+  cargoExtraArgs = "--target=wasm32-unknown-unknown ${cargoExtraArgs}";
 
   buildInputs = [
     pkgs.binaryen
     pkgs.wasm-bindgen-cli
-  ];
+  ] ++ buildInputs;
 
   # TODO: make the generation of JS bindings optional and configurable
-  packageAttrs = {
+  packageAttrs = packageAttrs // {
     postBuild = ''
           wasm-bindgen                                                          \
             --target web                                                        \
             --out-dir dist                                                      \
             --no-typescript                                                     \
             target/wasm32-unknown-unknown/release/${binaryName}.wasm
+
+            ${if builtins.hasAttr "postBuild" packageAttrs then packageAttrs.postBuild else ""}
       	'';
 
     postInstall = ''
       cp dist/* $out/lib
+
+      ${if builtins.hasAttr "postInstall" packageAttrs then packageAttrs.postInstall else ""}
     '';
   };
-}
+})
