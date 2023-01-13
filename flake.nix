@@ -24,19 +24,21 @@
         };
 
       mkRustToolchain = pkgs: pkgs.rust-bin.stable.latest.default;
+
       outputs =
         flake-utils.lib.eachDefaultSystem (system:
           let
             pkgs = mkDefaultPkgs system;
+            lib = mkLib { inherit pkgs crane rustToolchain; };
+
             checks = import ./checks {
               inherit pkgs mkLib;
-              lib = mkLib { inherit pkgs crane rustToolchain; };
               rootDir = ./.;
             };
             rustToolchain = (mkRustToolchain pkgs);
           in
           {
-            inherit checks mkLib;
+            inherit checks lib;
 
             testPackages = checks.testPackages;
 
@@ -60,22 +62,12 @@
           checks.default = crate.package;
           packages.default = crate.package;
 
-          devShells.default = pkgs.mkShell {
-            buildInputs = crate.nativeBuildInputs ++ crate.buildInputs ++ [
-              crate.rustToolchain
-              (versions { inherit pkgs; inherit (crate) rustToolchain; })
-              pkgs.cargo-outdated
-              pkgs.cargo-watch
-              pkgs.cargo-bloat
-              pkgs.cargo-udeps
-              pkgs.rust-analyzer
-              pkgs.rustfmt
-              pkgs.nixpkgs-fmt
-            ];
-          };
+          devShells.default = lib.mkDevShell crate;
         };
     in
     outputs // {
+      inherit mkLib;
+
       lib.mkOutputs = args:
         flake-utils.lib.eachDefaultSystem (system:
           mkOutputs (lib: lib.mkCrate) system args
