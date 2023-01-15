@@ -18,5 +18,11 @@ jobs:
       uses: cachix/install-nix-action@v17
     - name: Check formatting
       run: nix run nixpkgs#nixpkgs-fmt --inputs-from . -- . --check
-    - name: Flake Check
+    - name: Check main flake
       run: nix flake check
+    - name: Check examples
+      run: |
+        for dir in examples/*; do       \
+           cd $GITHUB_WORKSPACE/$dir && \
+           nix flake check;             \
+        done
