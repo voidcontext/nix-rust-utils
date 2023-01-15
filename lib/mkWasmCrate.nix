@@ -2,6 +2,7 @@
 
 let
   mkCrate = callPackage ./mkCrate.nix { };
+  snippets = callPackage ./snippets.nix { };
   defaultToolchain = pkgs.rust-bin.stable.latest.default.override {
     targets = [ "wasm32-unknown-unknown" ];
   };
@@ -20,14 +21,16 @@ in
 , pname ? attrFromCargoToml src [ "package" "name" ]
 , version ? attrFromCargoToml src [ "package" "version" ]
 , rustToolchain ? defaultToolchain
-, buildInputs ? []
-, packageAttrs ? {}
+, buildInputs ? [ ]
+, packageAttrs ? { }
 , cargoExtraArgs ? ""
 , doCheck ? true
-, 
+,
 }@args:
 let
-  binaryName = builtins.replaceStrings [ "-" ] [ "_" ] pname;
+  binaryName =
+    builtins.replaceStrings [ "-" ] [ "_" ]
+      (attrFromCargoToml src [ "package" "name" ]);
 in
 assert pkgs.lib.asserts.assertMsg (!doCheck || (testRunnerConfigured src)) "doCheck must be false or a test runner must be configured";
 mkCrate (args // {
@@ -44,12 +47,7 @@ mkCrate (args // {
   # TODO: make the generation of JS bindings optional and configurable
   packageAttrs = packageAttrs // {
     postBuild = ''
-          wasm-bindgen                                                          \
-            --target web                                                        \
-            --out-dir dist                                                      \
-            --no-typescript                                                     \
-            target/wasm32-unknown-unknown/release/${binaryName}.wasm
-
+            ${snippets.wasm.bindgen {inherit binaryName;}}
             ${if builtins.hasAttr "postBuild" packageAttrs then packageAttrs.postBuild else ""}
       	'';
 

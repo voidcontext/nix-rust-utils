@@ -40,7 +40,7 @@
           {
             inherit checks lib;
 
-            env = { inherit pkgs rustToolchain;};
+            env = { inherit pkgs rustToolchain; };
 
             testPackages = checks.testPackages;
 
