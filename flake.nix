@@ -11,74 +11,82 @@
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
 
-  outputs = { self, crane, flake-utils, ... }@inputs:
-    let
-      mkLib = import ./lib { inherit crane; };
-      versions = import ./packages/versions.nix;
+  outputs = {
+    self,
+    crane,
+    flake-utils,
+    ...
+  } @ inputs: let
+    mkLib = import ./lib {inherit crane;};
+    versions = import ./packages/versions.nix;
 
-      mkDefaultPkgs = system:
-        import inputs.nixpkgs {
-          inherit system;
+    mkDefaultPkgs = system:
+      import inputs.nixpkgs {
+        inherit system;
 
-          overlays = [ inputs.rust-overlay.overlays.default ];
+        overlays = [inputs.rust-overlay.overlays.default];
+      };
+
+    mkRustToolchain = pkgs: pkgs.rust-bin.stable.latest.default;
+
+    outputs = flake-utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = mkDefaultPkgs system;
+        lib = mkLib {inherit pkgs rustToolchain;};
+
+        checks = import ./checks {
+          inherit pkgs lib mkLib;
+          rootDir = ./.;
         };
+        rustToolchain = mkRustToolchain pkgs;
+      in {
+        inherit checks lib;
 
-      mkRustToolchain = pkgs: pkgs.rust-bin.stable.latest.default;
+        env = {inherit pkgs rustToolchain;};
 
-      outputs =
-        flake-utils.lib.eachDefaultSystem (system:
-          let
-            pkgs = mkDefaultPkgs system;
-            lib = mkLib { inherit pkgs rustToolchain; };
+        testPackages = checks.testPackages;
 
-            checks = import ./checks {
-              inherit pkgs lib mkLib;
-              rootDir = ./.;
-            };
-            rustToolchain = (mkRustToolchain pkgs);
-          in
-          {
-            inherit checks lib;
-
-            env = { inherit pkgs rustToolchain; };
-
-            testPackages = checks.testPackages;
-
-            devShells.default = pkgs.mkShell {
-              buildInputs = [
-                pkgs.nixpkgs-fmt
-                rustToolchain
-                (versions { inherit pkgs rustToolchain; })
-              ];
-            };
-          }
-        );
-
-      mkOutputs = selectMkCrateFn: system: args:
-        let
-          pkgs = mkDefaultPkgs system;
-          lib = mkLib { inherit pkgs crane; rustToolchain = mkRustToolchain pkgs; };
-          crate = (selectMkCrateFn lib) args;
-        in
-        {
-          checks.default = crate.package;
-          packages.default = crate.package;
-
-          devShells.default = lib.mkDevShell crate;
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs.alejandra
+            rustToolchain
+            (versions {inherit pkgs rustToolchain;})
+          ];
         };
-    in
-    outputs // {
+      }
+    );
+
+    mkOutputs = selectMkCrateFn: system: args: let
+      pkgs = mkDefaultPkgs system;
+      lib = mkLib {
+        inherit pkgs crane;
+        rustToolchain = mkRustToolchain pkgs;
+      };
+      crate = (selectMkCrateFn lib) args;
+    in {
+      checks.default = crate.package;
+      packages.default = crate.package;
+
+      devShells.default = lib.mkDevShell crate;
+    };
+  in
+    outputs
+    // {
       inherit mkLib;
 
-      lib = outputs.lib // {
-        mkOutputs = args:
-          flake-utils.lib.eachDefaultSystem (system:
-            mkOutputs (lib: lib.mkCrate) system args
-          );
-        mkWasmOutputs = args:
-          flake-utils.lib.eachDefaultSystem (system:
-            mkOutputs (lib: lib.mkWasmCrate) system args
-          );
-      };
+      lib =
+        outputs.lib
+        // {
+          mkOutputs = args:
+            flake-utils.lib.eachDefaultSystem (
+              system:
+                mkOutputs (lib: lib.mkCrate) system args
+            );
+          mkWasmOutputs = args:
+            flake-utils.lib.eachDefaultSystem (
+              system:
+                mkOutputs (lib: lib.mkWasmCrate) system args
+            );
+        };
     };
 }
