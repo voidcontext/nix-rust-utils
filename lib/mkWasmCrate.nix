@@ -52,7 +52,7 @@ in
             packageAttrs
             // {
               postBuild = ''
-                ${snippets.wasm.bindgen {inherit binaryName;}}
+                ${snippets.wasm.bindgen {}}
                 ${
                   if builtins.hasAttr "postBuild" packageAttrs
                   then packageAttrs.postBuild
