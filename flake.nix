@@ -56,13 +56,16 @@
       }
     );
 
-    mkOutputs = selectMkCrateFn: system: args: let
+    mkOutputs = selectMkCrateFn: system: mkArgs: let
       pkgs = mkDefaultPkgs system;
+      rustToolchain = mkRustToolchain pkgs;
       lib = mkLib {
-        inherit pkgs crane;
-        rustToolchain = mkRustToolchain pkgs;
+        inherit pkgs crane rustToolchain;
       };
-      crate = (selectMkCrateFn lib) args;
+      crate = (selectMkCrateFn lib) (mkArgs {
+        inherit pkgs rustToolchain;
+        nruLib = lib;
+      });
     in {
       checks.default = crate.package;
       packages.default = crate.package;
@@ -77,15 +80,15 @@
       lib =
         outputs.lib
         // {
-          mkOutputs = args:
+          mkOutputs = mkArgs:
             flake-utils.lib.eachDefaultSystem (
               system:
-                mkOutputs (lib: lib.mkCrate) system args
+                mkOutputs (lib: lib.mkCrate) system mkArgs
             );
-          mkWasmOutputs = args:
+          mkWasmOutputs = mkArgs:
             flake-utils.lib.eachDefaultSystem (
               system:
-                mkOutputs (lib: lib.mkWasmCrate) system args
+                mkOutputs (lib: lib.mkWasmCrate) system mkArgs
             );
         };
     };
