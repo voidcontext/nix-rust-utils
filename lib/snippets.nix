@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   # TODO: make this configurable: ie: target, outdir, typscript, etc
-  wasm.bindgen = {outDir ? "dist" }: ''
+  wasm.bindgen = {outDir ? "dist"}: ''
     for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
       wasm-bindgen                                                          \
         --target web                                                        \

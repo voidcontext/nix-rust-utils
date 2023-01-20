@@ -3,9 +3,8 @@
   rustToolchain,
   ...
 }:
-with builtins; 
-with pkgs.lib;
-let
+with builtins;
+with pkgs.lib; let
   attrFromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
   callPackage = pkgs.lib.callPackageWith {inherit pkgs rustToolchain crane callPackage attrFromCargoToml;};
   snippets = callPackage ./snippets.nix {};
@@ -17,8 +16,8 @@ in {
   mkDevShell = callPackage ./mkDevShell.nix {};
 
   inherit snippets;
-  
+
   utils.watch = pathCmds:
-    foldl' (a: b: a + b)  ""
-      (attrsets.mapAttrsToList snippets.utils.watch pathCmds);
+    foldl' (a: b: a + b) ""
+    (attrsets.mapAttrsToList snippets.utils.watch pathCmds);
 }
