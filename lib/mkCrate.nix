@@ -72,6 +72,10 @@ with pkgs.lib;
     inherit
       package
       rustToolchain
+      ;
+
+    inherit
+      (commonArgs)
       buildInputs
       nativeBuildInputs
       ;
