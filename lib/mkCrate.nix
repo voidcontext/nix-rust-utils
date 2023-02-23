@@ -63,7 +63,7 @@ with pkgs.lib;
             else ""
           }
           cargo fmt --check
-          cargo clippy ${cargoExtraArgs} -- -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
+          cargo clippy ${cargoExtraArgs} -- -Dwarnings -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
         '';
 
         inherit cargoExtraArgs;

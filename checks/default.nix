@@ -33,6 +33,16 @@
     })
     .package;
 
+  # checks rust formatting
+  checks.runs-clippy =
+    (lib.mkCrate {
+      src = ./rust/hello-world;
+      nativeBuildInputs = [cargoWrapper];
+      packageAttrs.postCheck = ''
+        grep 'cargo\ clippy.*-Dwarnings\ -W\ clippy::pedantic' $out/cargo.log
+      '';
+    })
+    .package;
   # TODO: buildPhase is can be overriden
 
   # rustToolchain can be overridden
