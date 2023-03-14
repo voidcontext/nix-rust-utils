@@ -73,7 +73,7 @@
       checks.default = crate.package;
       packages.default = crate.package;
 
-      devShells.default = (lib.mkDevShell crate);
+      devShells.default = lib.mkDevShell crate;
     };
   in
     outputs

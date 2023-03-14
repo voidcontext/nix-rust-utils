@@ -1,4 +1,8 @@
-{pkgs, pkgsUnstable, ...}: let
+{
+  pkgs,
+  pkgsUnstable,
+  ...
+}: let
   versions = import ../packages/versions.nix;
 in
   crate:
