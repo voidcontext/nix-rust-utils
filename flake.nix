@@ -63,7 +63,7 @@
       pkgsUnstable = mkDefaultPkgs system inputs.nixpkgs-unstable;
       rustToolchain = mkRustToolchain pkgs;
       lib = mkLib {
-        inherit pkgs crane rustToolchain;
+        inherit pkgs pkgsUnstable crane rustToolchain;
       };
       crate = (selectMkCrateFn lib) (mkArgs {
         inherit pkgs pkgsUnstable rustToolchain;

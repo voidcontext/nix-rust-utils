@@ -13,7 +13,7 @@ in
         ++ [
           crate.rustToolchain
           (versions {
-            inherit pkgs;
+            inherit pkgs pkgsUnstable;
             inherit (crate) rustToolchain;
           })
           pkgs.cargo-outdated
