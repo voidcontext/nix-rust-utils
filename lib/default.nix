@@ -1,12 +1,13 @@
 {crane, ...}: {
   pkgs,
+  pkgsUnstable,
   rustToolchain,
   ...
 }:
 with builtins;
 with pkgs.lib; let
   attrFromCargoToml = src: path: attrsets.getAttrFromPath path (fromTOML (readFile (src + "/Cargo.toml")));
-  callPackage = pkgs.lib.callPackageWith {inherit pkgs rustToolchain crane callPackage attrFromCargoToml;};
+  callPackage = pkgs.lib.callPackageWith {inherit pkgs pkgsUnstable rustToolchain crane callPackage attrFromCargoToml;};
   snippets = callPackage ./snippets.nix {};
 in {
   mkCrate = callPackage ./mkCrate.nix {};

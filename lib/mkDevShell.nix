@@ -1,4 +1,4 @@
-{pkgs, ...}: let
+{pkgs, pkgsUnstable, ...}: let
   versions = import ../packages/versions.nix;
 in
   crate:
@@ -16,7 +16,7 @@ in
           pkgs.cargo-watch
           pkgs.cargo-bloat
           pkgs.cargo-udeps
-          pkgs.rust-analyzer
+          pkgsUnstable.rust-analyzer
           pkgs.rustfmt
           pkgs.nixpkgs-fmt
         ];

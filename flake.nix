@@ -1,5 +1,6 @@
 {
   inputs.nixpkgs.url = "nixpkgs/release-22.11";
+  inputs.nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
@@ -20,8 +21,8 @@
     mkLib = import ./lib {inherit crane;};
     versions = import ./packages/versions.nix;
 
-    mkDefaultPkgs = system:
-      import inputs.nixpkgs {
+    mkDefaultPkgs = system: nixpkgs:
+      import nixpkgs {
         inherit system;
 
         overlays = [inputs.rust-overlay.overlays.default];
@@ -31,14 +32,15 @@
 
     outputs = flake-utils.lib.eachDefaultSystem (
       system: let
-        pkgs = mkDefaultPkgs system;
-        lib = mkLib {inherit pkgs rustToolchain;};
+        pkgs = mkDefaultPkgs system inputs.nixpkgs;
+        pkgsUnstable = mkDefaultPkgs system inputs.nixpkgs-unstable;
+        rustToolchain = mkRustToolchain pkgs;
+        lib = mkLib {inherit pkgs pkgsUnstable rustToolchain;};
 
         checks = import ./checks {
           inherit pkgs lib mkLib;
           rootDir = ./.;
         };
-        rustToolchain = mkRustToolchain pkgs;
       in {
         inherit checks lib;
 
@@ -50,27 +52,28 @@
           buildInputs = [
             pkgs.alejandra
             rustToolchain
-            (versions {inherit pkgs rustToolchain;})
+            (versions {inherit pkgs pkgsUnstable rustToolchain;})
           ];
         };
       }
     );
 
     mkOutputs = selectMkCrateFn: system: mkArgs: let
-      pkgs = mkDefaultPkgs system;
+      pkgs = mkDefaultPkgs system inputs.nixpkgs;
+      pkgsUnstable = mkDefaultPkgs system inputs.nixpkgs-unstable;
       rustToolchain = mkRustToolchain pkgs;
       lib = mkLib {
         inherit pkgs crane rustToolchain;
       };
       crate = (selectMkCrateFn lib) (mkArgs {
-        inherit pkgs rustToolchain;
+        inherit pkgs pkgsUnstable rustToolchain;
         nruLib = lib;
       });
     in {
       checks.default = crate.package;
       packages.default = crate.package;
 
-      devShells.default = lib.mkDevShell crate;
+      devShells.default = (lib.mkDevShell crate);
     };
   in
     outputs
