@@ -17,12 +17,14 @@ with pkgs.lib;
     cargoExtraArgs ? "",
     depsAttrs ? {},
     packageAttrs ? {},
+    skipClippy ? false,
     ...
   } @ args: let
     cleanedArgs = builtins.removeAttrs args [
       "rustToolchain"
       "depsAttrs"
       "packageAttrs"
+      "skipClippy"
     ];
     commonNativeBuildInputs =
       (optional pkgs.stdenv.isLinux pkgs.pkg-config)
@@ -63,7 +65,13 @@ with pkgs.lib;
             else ""
           }
           cargo fmt --check
-          cargo clippy ${cargoExtraArgs} --tests -- -Dwarnings -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc
+
+          ${
+            if skipClippy
+            then ""
+            else "cargo clippy ${cargoExtraArgs} --tests -- -Dwarnings -W clippy::pedantic -A clippy::missing-errors-doc -A clippy::missing-panics-doc"
+          }
+
         '';
 
         inherit cargoExtraArgs;

@@ -43,6 +43,25 @@
       '';
     })
     .package;
+
+  # checks if clippy checks can be disabled
+  checks.clippy-can-be-disabled =
+    (lib.mkWasmCrate {
+      src = ./rust/wasm-simple;
+      nativeBuildInputs = [cargoWrapper];
+      skipClippy = true;
+      packageAttrs.postCheck = ''
+        clippy_checked=$(grep 'cargo\ clippy.*-Dwarnings\ -W\ clippy::pedantic' $out/cargo.log || echo $? )
+
+        echo "Clippy checked: $clippy_checked"
+
+        if [ "$clippy_checked" != "1" ]; then
+          echo "Clippy wasn't turned off"
+          exit 1
+        fi
+      '';
+    })
+    .package;
   # TODO: buildPhase is can be overriden
 
   # rustToolchain can be overridden

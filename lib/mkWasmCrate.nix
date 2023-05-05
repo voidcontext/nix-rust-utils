@@ -28,6 +28,7 @@ in
     packageAttrs ? {},
     cargoExtraArgs ? "",
     doCheck ? true,
+    ...
   } @ args: let
     binaryName =
       builtins.replaceStrings ["-"] ["_"]
