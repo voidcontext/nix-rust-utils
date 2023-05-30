@@ -5,7 +5,7 @@
 }: let
   versions = import ../packages/versions.nix;
 in
-  crate:
+  crate: buildInputs:
     pkgs.mkShell {
       buildInputs =
         crate.nativeBuildInputs
@@ -23,5 +23,6 @@ in
           pkgsUnstable.rust-analyzer
           pkgs.rustfmt
           pkgs.nixpkgs-fmt
-        ];
+        ]
+        ++ buildInputs;
     }
