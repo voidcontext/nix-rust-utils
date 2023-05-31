@@ -65,10 +65,10 @@
       lib = mkLib {
         inherit pkgs pkgsUnstable crane rustToolchain;
       };
-      config = (mkConfig {
+      config = mkConfig {
         inherit pkgs pkgsUnstable rustToolchain;
         nruLib = lib;
-      });
+      };
       crate = (selectMkCrateFn lib) config.crate;
     in {
       checks.default = crate.package;
