@@ -20,6 +20,7 @@ in
           pkgs.cargo-watch
           pkgs.cargo-bloat
           pkgs.cargo-udeps
+          pkgs.cargo-edit
           pkgsUnstable.rust-analyzer
           pkgs.rustfmt
           pkgs.nixpkgs-fmt
