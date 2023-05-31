@@ -74,7 +74,11 @@
       checks.default = crate.package;
       packages.default = crate.package;
 
-      devShells.default = lib.mkDevShell crate config.buildInputs;
+      devShells.default = lib.mkDevShell crate (
+        if config ? buildInputs
+        then config.buildInputs
+        else []
+      );
     };
   in
     outputs
