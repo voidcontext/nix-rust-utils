@@ -1,5 +1,5 @@
 {
-  inputs.nixpkgs.url = "nixpkgs/release-22.11";
+  inputs.nixpkgs.url = "nixpkgs/release-23.05";
   inputs.nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
