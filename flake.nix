@@ -72,7 +72,8 @@
       crate = (selectMkCrateFn lib) config.crate;
     in {
       checks.default = crate.package;
-      packages.default = crate.package;
+      packages = { default = crate.package;} // (config.packages crate);
+      
 
       devShells.default = lib.mkDevShell crate (
         if config ? buildInputs
