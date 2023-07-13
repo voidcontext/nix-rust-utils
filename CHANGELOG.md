@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.8.0 - 2023-07-13
+#### Continuous Integration
+- use woodpecker-ci instead of githb actions - (437fea8) - Gabor Pihaj
+#### Features
+- simplify API by using latest crane (v0.12.2) - (bec5239) - Gabor Pihaj
+
+- - -
+
 ## v0.7.0 - 2023-07-05
 #### Bug Fixes
 - example code - (3892194) - Gabor Pihaj
