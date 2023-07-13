@@ -1,89 +1,43 @@
 {
   pkgs,
   mkLib,
-  lib,
   rootDir,
   ...
 }: let
-  cargoBin = "${pkgs.rust-bin.stable.latest.default}/bin/cargo";
-  cargoWrapper = pkgs.writeShellScriptBin "cargo" ''
-    mkdir -p $out
-    touch $out/cargo.log
+  defaultLib = mkLib {inherit pkgs;};
+  wasmLib = mkLib {
+    inherit pkgs;
+    toolchain = pkgs.rust-bin.stable.latest.default.override {
+      targets = ["wasm32-unknown-unknown"];
+    };
+  };
 
-    echo "cargo $@" >> $out/cargo.log
+  native-crate = defaultLib.mkCrate {src = ./rust/hello-world;};
+  wasm32-crate = wasmLib.mkWasmCrate {src = ./rust/wasm-simple;};
 
-    ${cargoBin} $@
-  '';
+  native-checks =
+    pkgs.lib.attrsets.mapAttrs' (name: value: {
+      name = "native-checks-${name}";
+      inherit value;
+    }) (defaultLib.mkChecks {
+      crate = native-crate;
+      src = ./rust/hello-world;
+      nextest = true;
+    });
+  wasm32-checks =
+    pkgs.lib.attrsets.mapAttrs' (name: value: {
+      name = "wasm32-checks-${name}";
+      inherit value;
+    }) (wasmLib.mkWasmChecks {
+      crate = wasm32-crate;
+      src = ./rust/wasm-simple;
+    });
 
   # test scenarios
 
   # can build rust package
-  checks.can-build-rust-package = (lib.mkCrate {src = ./rust/hello-world;}).package;
+  checks.can-build-rust-package = native-crate;
   # can build rust wasm package
-  checks.can-build-rust-wasm-package = (lib.mkWasmCrate {src = ./rust/wasm-simple;}).package;
-
-  # checks rust formatting
-  checks.checks-rust-formatting =
-    (lib.mkCrate {
-      src = ./rust/hello-world;
-      nativeBuildInputs = [cargoWrapper];
-      packageAttrs.postCheck = ''
-        grep 'cargo\ fmt\ --check' $out/cargo.log
-      '';
-    })
-    .package;
-
-  # checks rust formatting
-  checks.runs-clippy =
-    (lib.mkCrate {
-      src = ./rust/hello-world;
-      nativeBuildInputs = [cargoWrapper];
-      packageAttrs.postCheck = ''
-        grep 'cargo\ clippy.*-Dwarnings\ -W\ clippy::pedantic' $out/cargo.log
-      '';
-    })
-    .package;
-
-  # checks if clippy checks can be disabled
-  checks.clippy-can-be-disabled =
-    (lib.mkWasmCrate {
-      src = ./rust/wasm-simple;
-      nativeBuildInputs = [cargoWrapper];
-      skipClippy = true;
-      packageAttrs.postCheck = ''
-        clippy_checked=$(grep 'cargo\ clippy.*-Dwarnings\ -W\ clippy::pedantic' $out/cargo.log || echo $? )
-
-        echo "Clippy checked: $clippy_checked"
-
-        if [ "$clippy_checked" != "1" ]; then
-          echo "Clippy wasn't turned off"
-          exit 1
-        fi
-      '';
-    })
-    .package;
-  # TODO: buildPhase is can be overriden
-
-  # rustToolchain can be overridden
-  checks.can-override-rustToolchain = let
-    expectedVersion = "1.60.0";
-    rustToolchain = pkgs.rust-bin.stable.${expectedVersion}.default;
-  in
-    (lib.mkCrate {
-      src = ./rust/hello-world;
-
-      buildInputs = [pkgs.gawk];
-
-      inherit rustToolchain;
-
-      packageAttrs.preCheck = ''
-        rustc_version=$(rustc --version | awk '{print $2}')
-        if [ "$rustc_version"  != "${expectedVersion}" ]; then
-          echo "Expected version ${expectedVersion} got $rustc_version"
-          exit 1
-        fi
-      '';
-    })
-    .package;
+  checks.can-build-rust-wasm-package = wasm32-crate;
 in
-  checks
+  checks // native-checks // wasm32-checks

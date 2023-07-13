@@ -1,14 +1,11 @@
 {
   pkgs,
   callPackage,
-  attrFromCargoToml,
+  # attrFromCargoToml,
   ...
 }: let
   mkCrate = callPackage ./mkCrate.nix {};
   snippets = callPackage ./snippets.nix {};
-  defaultToolchain = pkgs.rust-bin.stable.latest.default.override {
-    targets = ["wasm32-unknown-unknown"];
-  };
   testRunnerConfigured = src:
     with pkgs.lib;
     with builtins; let
@@ -21,54 +18,37 @@
 in
   {
     src,
-    pname ? attrFromCargoToml src ["package" "name"],
-    version ? attrFromCargoToml src ["package" "version"],
-    rustToolchain ? defaultToolchain,
-    buildInputs ? [],
-    packageAttrs ? {},
-    cargoExtraArgs ? "",
+    postBuild ? "",
+    postInstall ? "",
     doCheck ? true,
     ...
   } @ args: let
-    binaryName =
-      builtins.replaceStrings ["-"] ["_"]
-      (attrFromCargoToml src ["package" "name"]);
+    cleanedArgs = builtins.removeAttrs args [
+      "postBuild"
+      "postInstall"
+      "doCheck"
+    ];
   in
     assert pkgs.lib.asserts.assertMsg (!doCheck || (testRunnerConfigured src)) "doCheck must be false or a test runner must be configured";
-      mkCrate (args
+      mkCrate (cleanedArgs
         // {
-          inherit pname version rustToolchain;
+          inherit doCheck;
+          target = "wasm32-unknown-unknown";
 
-          cargoExtraArgs = "--target=wasm32-unknown-unknown ${cargoExtraArgs}";
-
-          buildInputs =
-            [
-              pkgs.binaryen
-              pkgs.wasm-bindgen-cli
-            ]
-            ++ buildInputs;
+          buildInputs = [
+            pkgs.binaryen
+            pkgs.wasm-bindgen-cli
+          ];
 
           # TODO: make the generation of JS bindings optional and configurable
-          packageAttrs =
-            packageAttrs
-            // {
-              postBuild = ''
-                ${snippets.wasm.bindgen {}}
-                ${
-                  if builtins.hasAttr "postBuild" packageAttrs
-                  then packageAttrs.postBuild
-                  else ""
-                }
-              '';
+          postBuild = ''
+            ${snippets.wasm.bindgen {}}
+            ${postBuild}
+          '';
 
-              postInstall = ''
-                cp dist/* $out/lib
+          postInstall = ''
+            cp dist/* $out/lib
 
-                ${
-                  if builtins.hasAttr "postInstall" packageAttrs
-                  then packageAttrs.postInstall
-                  else ""
-                }
-              '';
-            };
+            ${postInstall}
+          '';
         })
