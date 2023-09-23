@@ -1,9 +1,16 @@
 {
-  pkgs,
+  nixpkgs,
+  rust-overlay,
+  system,
   mkLib,
   rootDir,
   ...
 }: let
+  pkgs = import nixpkgs {
+    inherit system;
+
+    overlays = [rust-overlay.overlays.default];
+  };
   defaultLib = mkLib {inherit pkgs;};
   wasmLib = mkLib {
     inherit pkgs;

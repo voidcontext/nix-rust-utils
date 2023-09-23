@@ -1,13 +1,12 @@
-{pkgs, ...}: {
-  crate,
+{pkgs, craneLib, ...}: {
+  inputsFrom ? [],
   checks ? {},
-  buildInputs ? [],
-  toolchain ? null,
+  packages ? []
 }:
-pkgs.mkShell {
-  inputsFrom = (builtins.attrValues checks) ++ [crate];
+craneLib.devShell {
+  inputsFrom = (builtins.attrValues checks) ++ inputsFrom;
 
-  buildInputs =
+  packages =
     [
       pkgs.cargo-outdated
       pkgs.cargo-watch
@@ -18,6 +17,5 @@ pkgs.mkShell {
       pkgs.rustfmt
       pkgs.nixpkgs-fmt
     ]
-    ++ buildInputs
-    ++ pkgs.lib.optional (toolchain != null) toolchain;
+    ++ packages;
 }
