@@ -6,16 +6,24 @@
 }: {
   crate,
   src,
+  buildInputs ? [],
+  cargoExtraArgs ? "",
   target ? null,
   nextest ? false,
 }: let
-  utils = import ./utils.nix {inherit pkgs craneLib;};
+  cargoArtifacts = import ./internal/mkArtifacts.nix {
+    inherit
+      pkgs
+      craneLib
+      src
+      buildInputs
+      cargoExtraArgs
+      ;
+  };
 
-  commonArgs = utils.commonArgs {inherit src target;};
-  commonArgsWithoutTarget = utils.commonArgs {inherit src;};
-  # Build *just* the cargo dependencies, so we can reuse
-  # all of that work (e.g. via cachix) when running in CI
-  cargoArtifacts = craneLib.buildDepsOnly commonArgsWithoutTarget;
+  utils = import ./utils.nix {inherit pkgs craneLib;};
+  commonArgs = utils.commonArgs {inherit src buildInputs target cargoExtraArgs;};
+  commonArgsWithoutTarget = utils.commonArgs {inherit src buildInputs cargoExtraArgs;};
 in
   {
     # Build the crate as part of `nix flake check` for convenience

@@ -4,20 +4,18 @@
 }: {
   commonArgs = {
     src,
-    buildInputs ? [],
-    buildInputsDarwin ? [],
-    cargoExtraArgs ? "",
+    buildInputs,
+    cargoExtraArgs,
     target ? null,
   }: let
     crateSrc = craneLib.cleanCargoSource (craneLib.path src);
-    bi = buildInputs ++ pkgs.lib.optionals pkgs.stdenv.isDarwin buildInputsDarwin;
     targetArg =
       if target == null
       then ""
       else "--target=${target}";
   in {
     src = crateSrc;
-    buildInputs = bi;
+    inherit buildInputs;
     cargoExtraArgs = "${targetArg} ${cargoExtraArgs}";
   };
 }
