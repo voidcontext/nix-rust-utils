@@ -19,7 +19,6 @@
     advisory-db,
     ...
   } @ inputs: let
-
     mkLib = import ./lib {inherit crane advisory-db;};
 
     outputs = flake-utils.lib.eachDefaultSystem (

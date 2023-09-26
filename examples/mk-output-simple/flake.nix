@@ -21,6 +21,9 @@
 
       packages.default = crate;
 
-      devShells.default = nru.mkDevShell {inputsFrom = [crate]; inherit checks;};
+      devShells.default = nru.mkDevShell {
+        inputsFrom = [crate];
+        inherit checks;
+      };
     });
 }

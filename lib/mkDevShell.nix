@@ -1,7 +1,11 @@
-{pkgs, craneLib, ...}: {
+{
+  pkgs,
+  craneLib,
+  ...
+}: {
   inputsFrom ? [],
   checks ? {},
-  packages ? []
+  packages ? [],
 }:
 craneLib.devShell {
   inputsFrom = (builtins.attrValues checks) ++ inputsFrom;
