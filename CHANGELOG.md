@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.8.1 - 2023-09-26
+#### Bug Fixes
+- make sure cargo deps are the same in mkCrate and mkChecks - (f57b383) - Gabor Pihaj
+#### Miscellaneous Chores
+- reformat files - (0e56ea7) - Gabor Pihaj
+#### Refactoring
+- implement mkDevShell using crane - (e13a5bf) - Gabor Pihaj
+
+- - -
+
 ## v0.8.0 - 2023-07-13
 #### Continuous Integration
 - use woodpecker-ci instead of githb actions - (437fea8) - Gabor Pihaj
