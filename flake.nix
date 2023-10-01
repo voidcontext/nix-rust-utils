@@ -35,6 +35,11 @@
       in {
         inherit checks lib;
 
+        packages.checks = pkgs.symlinkJoin {
+          name = "nix-rust-utils-checks";
+          paths = builtins.attrValues checks;
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = [
             pkgs.alejandra

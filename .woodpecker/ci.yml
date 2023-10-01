@@ -1,27 +1,30 @@
+variables:
+  - common_settings: &common_settings
+      binary_cache: https://cache.nix.vdx.hu/private
+      binary_cache_public_key: private:O0/Z0BQZpKKHQQES65u7xNfZF7eCZoz9RKJi191TGaM=
+      binary_cache_token:
+        from_secret: attic_token
+
 pipeline:
   flake-check:
-    image: nixos/nix
-    commands:
-      - set -o pipefail
-      - .woodpecker/setup-nix.sh
-      - nix flake check 2>&1 | nix run "git+https://git.vdx.hu/voidcontext/nix-cache-copy?ref=refs/tags/v0.2.0" -- -t file:///var/lib/woodpecker-agent/nix-store -k /var/lib/woodpecker-agent/nix-store/cache-priv-key.pem
-    volumes:
-      - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
+    image: git.vdx.hu/voidcontext/woodpecker-plugin-nix-attic:0.1.1
+    settings:
+      <<: *common_settings
+      script: |
+        attic login default $PLUGIN_BINARY_CACHE $PLUGIN_BINARY_CACHE_TOKEN
+        nix flake check
+        attic push private $(nix-store --query --requisites --include-outputs $(nix path-info --derivation .#checks))
 
-  examples-check:
-    image: nixos/nix
-    commands:
-      - set -o pipefail
-      - .woodpecker/setup-nix.sh
-      - .woodpecker/check-examples.sh
-    volumes:
-      - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
+        # Check examples
+        for dir in examples/*; do
+          cd $CI_WORKSPACE/$dir
+          nix flake check
+          attic push private $(nix-store --query --requisites --include-outputs $(nix path-info --derivation .#default))
+        done
 
-  nix-fmt-check:
-    image: nixos/nix
-    commands:
-      - set -o pipefail
-      - .woodpecker/setup-nix.sh
-      - nix develop -c alejandra . --check | nix run "git+https://git.vdx.hu/voidcontext/nix-cache-copy?ref=refs/tags/v0.2.0" -- -t file:///var/lib/woodpecker-agent/nix-store -k /var/lib/woodpecker-agent/nix-store/cache-priv-key.pem
-    volumes:
-      - /var/lib/woodpecker-agent/nix-store:/var/lib/woodpecker-agent/nix-store
+  formatting-check:
+    image: git.vdx.hu/voidcontext/woodpecker-plugin-nix-attic:0.1.1
+    settings:
+      <<: *common_settings
+      script: |
+        nix develop -c alejandra . --check
