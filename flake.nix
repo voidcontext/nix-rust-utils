@@ -1,6 +1,5 @@
 {
   inputs.nixpkgs.url = "nixpkgs/release-23.05";
-  inputs.nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.crane.url = "github:ipetkov/crane";
