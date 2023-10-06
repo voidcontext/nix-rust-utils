@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.8.2 - 2023-10-06
+#### Bug Fixes
+- remove unused flake input (nixpkgs unstable) (#5) - (917db73) - Gabor Pihaj
+#### Build system
+- run CI on PRs and when pushed to main (#6) - (6ee0c10) - Gabor Pihaj
+- use nix-attic woodpecker plugin and attic cache (#4) - (f9778cc) - Gabor Pihaj
+#### Miscellaneous Chores
+- update nixpkgs (#7) - (7fe4a02) - Gabor Pihaj
+
+- - -
+
 ## v0.8.1 - 2023-09-26
 #### Bug Fixes
 - make sure cargo deps are the same in mkCrate and mkChecks - (f57b383) - Gabor Pihaj
