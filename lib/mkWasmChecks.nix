@@ -1,11 +1,10 @@
-{callPackage, ...}: {
-  crate,
-  src,
-}: let
+{callPackage, ...}: args: let
   mkChecks = callPackage ./mkChecks.nix {};
 in
-  mkChecks {
-    inherit crate src;
-    target = "wasm32-unknown-unkown";
-    nextest = false;
-  }
+  mkChecks (
+    args
+    // {
+      target = "wasm32-unknown-unkown";
+      nextest = false;
+    }
+  )

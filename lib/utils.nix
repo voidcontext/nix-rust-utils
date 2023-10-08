@@ -5,6 +5,7 @@
   commonArgs = {
     src,
     buildInputs,
+    nativeBuildInputs,
     cargoExtraArgs,
     target ? null,
   }: let
@@ -15,7 +16,7 @@
       else "--target=${target}";
   in {
     src = crateSrc;
-    inherit buildInputs;
+    inherit buildInputs nativeBuildInputs;
     cargoExtraArgs = "${targetArg} ${cargoExtraArgs}";
   };
 }

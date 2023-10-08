@@ -5,6 +5,7 @@
 }: {
   src,
   buildInputs ? [],
+  nativeBuildInputs ? [],
   cargoExtraArgs ? "",
   target ? null,
   ...
@@ -15,12 +16,13 @@
       craneLib
       src
       buildInputs
+      nativeBuildInputs
       cargoExtraArgs
       ;
   };
 
   utils = import ./utils.nix {inherit pkgs craneLib;};
-  commonArgs = utils.commonArgs {inherit src buildInputs target cargoExtraArgs;};
+  commonArgs = utils.commonArgs {inherit src nativeBuildInputs buildInputs target cargoExtraArgs;};
   cleanedArgs = builtins.removeAttrs args [
     "src"
     "cargoExtraArgs"

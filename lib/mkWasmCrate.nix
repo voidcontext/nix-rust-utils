@@ -20,6 +20,7 @@ in
     src,
     postBuild ? "",
     postInstall ? "",
+    buildInputs ? [],
     doCheck ? true,
     ...
   } @ args: let
@@ -27,6 +28,7 @@ in
       "postBuild"
       "postInstall"
       "doCheck"
+      "buildInputs"
     ];
   in
     assert pkgs.lib.asserts.assertMsg (!doCheck || (testRunnerConfigured src)) "doCheck must be false or a test runner must be configured";
@@ -35,10 +37,12 @@ in
           inherit doCheck;
           target = "wasm32-unknown-unknown";
 
-          buildInputs = [
-            pkgs.binaryen
-            pkgs.wasm-bindgen-cli
-          ];
+          buildInputs =
+            buildInputs
+            ++ [
+              pkgs.binaryen
+              pkgs.wasm-bindgen-cli
+            ];
 
           # TODO: make the generation of JS bindings optional and configurable
           postBuild = ''

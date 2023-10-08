@@ -7,6 +7,7 @@
   crate,
   src,
   buildInputs ? [],
+  nativeBuildInputs ? [],
   cargoExtraArgs ? "",
   target ? null,
   nextest ? false,
@@ -17,13 +18,14 @@
       craneLib
       src
       buildInputs
+      nativeBuildInputs
       cargoExtraArgs
       ;
   };
 
   utils = import ./utils.nix {inherit pkgs craneLib;};
-  commonArgs = utils.commonArgs {inherit src buildInputs target cargoExtraArgs;};
-  commonArgsWithoutTarget = utils.commonArgs {inherit src buildInputs cargoExtraArgs;};
+  commonArgs = utils.commonArgs {inherit src nativeBuildInputs buildInputs target cargoExtraArgs;};
+  commonArgsWithoutTarget = utils.commonArgs {inherit src nativeBuildInputs buildInputs cargoExtraArgs;};
 in
   {
     # Build the crate as part of `nix flake check` for convenience

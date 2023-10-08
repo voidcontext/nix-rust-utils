@@ -3,6 +3,7 @@
   craneLib,
   src,
   buildInputs,
+  nativeBuildInputs,
   cargoExtraArgs,
 }: let
   utils = import ../utils.nix {inherit pkgs craneLib;};
@@ -10,7 +11,7 @@
   # all of that work (e.g. via cachix) when running in CI
   cargoArtifacts = craneLib.buildDepsOnly (
     # Please note target is intentionnally omitted here
-    utils.commonArgs {inherit src buildInputs cargoExtraArgs;}
+    utils.commonArgs {inherit src nativeBuildInputs buildInputs cargoExtraArgs;}
   );
 in
   cargoArtifacts
