@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.8.3 - 2023-10-08
+#### Bug Fixes
+- propagate build inputs correctly in wasm derivations (#8) - (c29f589) - Gabor Pihaj
+
+- - -
+
 ## v0.8.2 - 2023-10-06
 #### Bug Fixes
 - remove unused flake input (nixpkgs unstable) (#5) - (917db73) - Gabor Pihaj
