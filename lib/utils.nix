@@ -7,9 +7,17 @@
     buildInputs,
     nativeBuildInputs,
     cargoExtraArgs,
+    sourceFilter,
     target ? null,
   }: let
-    crateSrc = craneLib.cleanCargoSource (craneLib.path src);
+    crateSrc =
+      if sourceFilter == null
+      then craneLib.cleanCargoSource (craneLib.path src)
+      else
+        pkgs.lib.cleanSourceWith {
+          inherit src;
+          filter = sourceFilter;
+        };
     targetArg =
       if target == null
       then ""

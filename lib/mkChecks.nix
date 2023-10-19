@@ -11,6 +11,7 @@
   cargoExtraArgs ? "",
   cargoClippyExtraArgs ? "--all-targets -- -Dwarnings -W clippy::pedantic",
   target ? null,
+  sourceFilter ? null,
   nextest ? false,
   ...
 } @ args: let
@@ -22,12 +23,30 @@
       buildInputs
       nativeBuildInputs
       cargoExtraArgs
+      sourceFilter
       ;
   };
 
   utils = import ./utils.nix {inherit pkgs craneLib;};
-  commonArgs = utils.commonArgs {inherit src nativeBuildInputs buildInputs target cargoExtraArgs;};
-  commonArgsWithoutTarget = utils.commonArgs {inherit src nativeBuildInputs buildInputs cargoExtraArgs;};
+  commonArgs = utils.commonArgs {
+    inherit
+      src
+      nativeBuildInputs
+      buildInputs
+      target
+      cargoExtraArgs
+      sourceFilter
+      ;
+  };
+  commonArgsWithoutTarget = utils.commonArgs {
+    inherit
+      src
+      nativeBuildInputs
+      buildInputs
+      cargoExtraArgs
+      sourceFilter
+      ;
+  };
   cleanedArgs = builtins.removeAttrs args ["crate" "src" "target" "nextest" "cargoClippyExtraArgs"];
 in
   {
