@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.9.0 - 2023-10-19
+#### Bug Fixes
+- handle cargo clippy extra args (#9) - (1b5fdf0) - Gabor Pihaj
+#### Features
+- add ability to change the default source filter (#3) - (d9abc3d) - Gabor Pihaj
+
+- - -
+
 ## v0.8.3 - 2023-10-08
 #### Bug Fixes
 - propagate build inputs correctly in wasm derivations (#8) - (c29f589) - Gabor Pihaj
