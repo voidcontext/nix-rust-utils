@@ -13,19 +13,24 @@
   target ? null,
   sourceFilter ? null,
   nextest ? false,
+  skipBuildDeps ? false,
   ...
 } @ args: let
-  cargoArtifacts = import ./internal/mkArtifacts.nix {
-    inherit
-      pkgs
-      craneLib
-      src
-      buildInputs
-      nativeBuildInputs
-      cargoExtraArgs
-      sourceFilter
-      ;
-  };
+  cargoArtifacts =
+    if skipBuildDeps
+    then null
+    else
+      import ./internal/mkArtifacts.nix {
+        inherit
+          pkgs
+          craneLib
+          src
+          buildInputs
+          nativeBuildInputs
+          cargoExtraArgs
+          sourceFilter
+          ;
+      };
 
   utils = import ./utils.nix {inherit pkgs craneLib;};
   commonArgs = utils.commonArgs {
