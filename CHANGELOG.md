@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.10.0 - 2023-11-24
+#### Bug Fixes
+- allow passing environment variables to the dev shell (#12) - (34c8e07) - Gabor Pihaj
+- remove sourceFilter from args before passing to cargo checks (#11) - (2ceb394) - Gabor Pihaj
+#### Features
+- add ability to skip building dependencies as standalone derivation (#10) - (56cb702) - Gabor Pihaj
+
+- - -
+
 ## v0.9.0 - 2023-10-19
 #### Bug Fixes
 - handle cargo clippy extra args (#9) - (1b5fdf0) - Gabor Pihaj
