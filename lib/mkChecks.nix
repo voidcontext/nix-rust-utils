@@ -52,7 +52,7 @@
       sourceFilter
       ;
   };
-  cleanedArgs = builtins.removeAttrs args ["crate" "src" "target" "nextest" "cargoClippyExtraArgs"];
+  cleanedArgs = builtins.removeAttrs args ["crate" "src" "target" "nextest" "cargoClippyExtraArgs" "sourceFilter"];
 in
   {
     # Build the crate as part of `nix flake check` for convenience
